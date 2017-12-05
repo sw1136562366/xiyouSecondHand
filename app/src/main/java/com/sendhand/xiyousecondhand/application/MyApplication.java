@@ -3,6 +3,9 @@ package com.sendhand.xiyousecondhand.application;
 import android.app.Application;
 import android.content.Context;
 
+import com.mob.MobApplication;
+import com.mob.MobSDK;
+
 import org.litepal.LitePal;
 
 /**
@@ -18,6 +21,7 @@ public class MyApplication extends Application {
     public void onCreate() {
         context = getApplicationContext();
         LitePal.initialize(context);
+        MobSDK.init(context);
     }
 
     public static Context getContext() {
