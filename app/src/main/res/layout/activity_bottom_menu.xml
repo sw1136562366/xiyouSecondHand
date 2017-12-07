@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="300dp"
+    android:background="#ffffff"
+    android:orientation="vertical"
+   >
+
+    <TextView
+        android:id="@+id/btnFindPassword"
+        android:clickable="true"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="重置密码"
+        android:textColor="@color/black"
+        android:textSize="18sp" />
+
+    <View  android:layout_height="1px"
+        android:layout_width="match_parent"
+        android:background="@color/gray"
+        />
+
+    <TextView
+        android:id="@+id/btnSmsLogin"
+        android:clickable="true"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="短信验证登录"
+        android:textColor="@color/black"
+        android:textSize="18sp" />
+
+    <View  android:layout_height="20px"
+        android:layout_width="match_parent"
+        android:background="#EDEDED"
+        />
+
+    <TextView
+        android:id="@+id/btnCancel"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="取消"
+        android:clickable="true"
+        android:textColor="@color/black"
+        android:textSize="18sp" />
+</LinearLayout>

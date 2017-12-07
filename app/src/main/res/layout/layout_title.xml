@@ -2,8 +2,8 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/rlTopTitle"
     android:layout_width="fill_parent"
-    android:layout_height="?attr/actionBarSize"
-    android:background="?attr/colorPrimary" >
+    android:layout_height="@dimen/top_title_height"
+    android:background="@color/no_sel" >
 
     <!-- 左边按钮 -->
 
@@ -15,7 +15,7 @@
         android:layout_centerVertical="true"
         android:layout_marginLeft="5dip"
         android:background="@drawable/btn_back_selector"
-        android:text="返回"
+        android:text="@string/back"
         android:textColor="@color/white"
         android:textSize="16sp"
         android:visibility="gone" />
