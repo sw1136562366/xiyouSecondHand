@@ -11,10 +11,54 @@
         android:src="@mipmap/login_background"
         android:scaleType="fitXY" />
 
+    <!--
+    <ProgressBar android:id="@+id/loading_progressBar"
+        android:layout_marginLeft="130dip"
+        android:layout_marginTop="80dip"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:indeterminate="false" android:indeterminateDrawable="@drawable/dialog_color"
+        android:visibility="gone"
+        />
+        -->
+
+    <TextView
+        android:id="@+id/progress_background"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="80dp"
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:visibility="gone"
+        android:background="#850A0A0A"/>
+
+    <ProgressBar
+        android:id="@+id/loading_progressBar"
+        style="@android:style/Widget.ProgressBar"
+        android:layout_width="match_parent"
+        android:layout_height="17dp"
+        android:layout_marginTop="90dp"
+        android:layout_marginLeft="-50dp"
+        android:visibility="gone"
+        android:indeterminateDrawable="@drawable/progressbar"/>
+
+    <TextView
+        android:id="@+id/lading_sign"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="175dp"
+        android:layout_marginTop="88dip"
+        android:textSize="15dp"
+        android:textColor="@color/white"
+        android:text="登录中"
+        android:visibility="gone"
+        />
+
     <EditText
         android:id="@+id/etPhone"
         android:hint="手机号"
+        android:textColorHint="#F5FFFA"
         android:textSize="20dp"
+        android:textColor="@color/white"
         android:layout_width="match_parent"
         android:layout_height="60dip"
         android:layout_marginLeft="22dip"
@@ -28,6 +72,8 @@
 
     <EditText
         android:id="@+id/etPassword"
+        android:textColor="@color/white"
+        android:textColorHint="#F5FFFA"
         android:hint="密码"
         android:textSize="20dp"
         android:layout_width="match_parent"
@@ -51,7 +97,9 @@
         android:background="@drawable/login_button_back"
         android:text="登 录"
         android:textSize="20dp"
-        android:textColor="@android:color/white"/>
+        android:textColor="@android:color/white"
+        />
+    <!--
     <TextView
         android:id="@+id/tvFindPassword"
         android:clickable="true"
@@ -66,7 +114,8 @@
         android:textColor="@color/picbule"
         android:gravity="bottom"
         android:layout_marginBottom="20dp"/>
-
+        -->
+    <!--
     <TextView
         android:id="@+id/tvRegister"
         android:clickable="true"
@@ -82,7 +131,38 @@
         android:textColor="@color/picbule"
         android:gravity="bottom"
         android:layout_marginBottom="20dp"/>
+        -->
+    <TextView
+        android:id="@+id/tvFindPassword"
+        android:clickable="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/btnLogin"
+        android:layout_marginLeft="22dip"
+        android:layout_marginTop="18dip"
+        android:text="忘记密码？"
+        android:textSize="7pt"
+        android:textColor="@color/picbule"
+        android:gravity="bottom"
+        android:layout_marginBottom="20dp"/>
 
+    <TextView
+        android:id="@+id/tvRegister"
+        android:clickable="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/btnLogin"
+        android:layout_alignParentRight="true"
+        android:layout_marginRight="22dip"
+        android:layout_marginTop="18dip"
+        android:text="新用户注册"
+        android:textSize="7pt"
+        android:textColor="@color/picbule"
+        android:gravity="bottom"
+        />
+
+    <!--
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -94,5 +174,6 @@
         android:gravity="bottom"
         android:textColor="@color/picbule"
         android:layout_marginBottom="20dp"/>
+        -->
 
 </RelativeLayout>

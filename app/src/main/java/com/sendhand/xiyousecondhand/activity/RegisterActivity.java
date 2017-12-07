@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 import static com.sendhand.xiyousecondhand.R.drawable.login_button_back;
 
-public class RegisterActivity extends AppCompatActivity implements View.OnClickListener{
+public class RegisterActivity extends BaseActivity implements View.OnClickListener{
 
     private EditText etUserName;
     private EditText etPassword;

@@ -17,7 +17,10 @@ import com.sendhand.xiyousecondhand.R;
 import static com.sendhand.xiyousecondhand.activity.RegisterActivity.setEditTextInhibitInputSpace;
 import static com.sendhand.xiyousecondhand.activity.RegisterActivity.setEditTextInhibitInputSpeChat;
 
-public class ModifyPwdActivity extends AppCompatActivity implements View.OnClickListener{
+/**
+ * 重置密码
+ */
+public class ModifyPwdActivity extends BaseActivity implements View.OnClickListener{
 
     private EditText etPassword;
     private EditText etConPassword;
