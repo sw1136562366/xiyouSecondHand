@@ -8,90 +8,60 @@
     android:paddingTop="@dimen/activity_vertical_margin">
 
     <TextView
-        android:id="@+id/progress_background"
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-        android:layout_marginTop="20dp"
-        android:layout_width="match_parent"
-        android:layout_height="38dp"
-        android:visibility="gone"
-        android:background="#850A0A0A"/>
-
-    <ProgressBar
-        android:id="@+id/loading_progressBar"
-        style="@android:style/Widget.ProgressBar"
-        android:layout_width="match_parent"
-        android:layout_height="17dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginLeft="-60dp"
-        android:visibility="gone"
-        android:indeterminateDrawable="@drawable/progressbar"/>
-    <TextView
-        android:id="@+id/lading_sign"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="150dp"
-        android:layout_marginTop="28dip"
-        android:textSize="15dp"
-        android:textColor="@color/white"
-        android:text="正在重置..."
-        android:visibility="gone" />
-    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="60dp"
         android:layout_marginLeft="10dip"
-        android:text="重置密码"
+        android:text="输入短信验证码"
         android:textSize="35dp"
         android:textColor="@color/black"/>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="110dp"
         android:layout_marginLeft="10dip"
-        android:text="密码由6-16位数字、字母或符号组成"
+        android:text="我们已经给您的手机发送了一个4位数验证码"
         android:textSize="15dp"
         android:textColor="@color/black"/>
-
+    <!--
     <EditText
-        android:id="@+id/etPassword"
-        android:hint="密码"
+        android:id="@+id/etUserName"
+        android:hint="昵称"
         android:textSize="20dp"
         android:layout_width="match_parent"
         android:layout_height="60dip"
         android:layout_marginLeft="10dip"
         android:layout_marginRight="10dip"
-        android:inputType="textPassword"
         android:layout_marginTop="140dip"
         android:paddingLeft="5dip"
         android:lines="1"
         android:textCursorDrawable="@drawable/edit_cursor"
         />
-
+    -->
     <EditText
-        android:id="@+id/etConPassword"
-        android:hint="确认密码"
+        android:id="@+id/etIdentifyCode"
         android:textSize="20dp"
         android:layout_width="match_parent"
         android:layout_height="60dip"
-        android:paddingLeft="5dip"
+        android:paddingLeft="30dip"
+        android:layout_marginTop="150dp"
         android:layout_marginLeft="10dip"
         android:layout_marginRight="10dip"
-        android:inputType="textPassword"
-        android:layout_below="@id/etPassword"
+        android:inputType="number"
         android:textCursorDrawable="@drawable/edit_cursor"
         />
 
     <Button
-        android:id="@+id/btnModifyPwd"
+        android:id="@+id/btnConfirm"
         android:layout_width="match_parent"
         android:layout_height="40dip"
-        android:layout_below="@id/etConPassword"
-        android:layout_alignLeft="@id/etConPassword"
-        android:layout_alignRight="@id/etConPassword"
+        android:layout_below="@id/etIdentifyCode"
+        android:layout_alignLeft="@id/etIdentifyCode"
+        android:layout_alignRight="@id/etIdentifyCode"
         android:layout_marginTop="20dip"
-        android:background="@drawable/btn_common_selector"
-        android:text="确认"
+        android:background="@drawable/login_button_back"
+        android:text="下一步"
         android:textSize="20dp"
         android:textColor="@android:color/white"
         />

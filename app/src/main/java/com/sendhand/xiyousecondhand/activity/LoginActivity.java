@@ -21,6 +21,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +29,8 @@ import com.sendhand.xiyousecondhand.R;
 import com.sendhand.xiyousecondhand.application.MyApplication;
 import com.sendhand.xiyousecondhand.entry.Constants;
 import com.sendhand.xiyousecondhand.util.HttpUtil;
+import com.sendhand.xiyousecondhand.util.MD5Util;
+import com.sendhand.xiyousecondhand.util.ToastUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,14 +45,14 @@ import okhttp3.FormBody;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import static com.sendhand.xiyousecondhand.activity.RegisterActivity.validatePhone;
+
 public class LoginActivity extends BaseActivity implements View.OnClickListener {
 
     private EditText etPhone;
     private EditText etPassword;
     private Dialog mCameraDialog; //底部菜单栏
-    private ProgressBar ladingProgressBar;
-    private TextView ladingSign;
-    private TextView progressbarBack;
+    private RelativeLayout loadingProgerss;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,9 +60,13 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
         //隐藏手机状态栏
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.login_layout);
-        ladingProgressBar = (ProgressBar) findViewById(R.id.loading_progressBar);
-        ladingSign = (TextView) findViewById(R.id.lading_sign);
-        progressbarBack = (TextView) findViewById(R.id.progress_background);
+        requestPermissions();
+    }
+
+    private void initView() {
+        loadingProgerss = (RelativeLayout) findViewById(R.id.loading_progerss);
+        loadingProgerss.setClickable(false);
+        loadingProgerss.setOnClickListener(null);
         etPhone = (EditText) findViewById(R.id.etPhone);
         etPassword = (EditText) findViewById(R.id.etPassword);
         if (getIntent() != null) {
@@ -85,8 +92,11 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                 login();
                 break;
             case R.id.tvRegister:
-                //注册（申请权限）
-                requestPermissions();
+                //跳转手机号验证界面
+//                registerPage();
+                Intent registerIntent = new Intent(LoginActivity.this, SmsSendActivity.class);
+                registerIntent.putExtra("sign", "register");
+                startActivity(registerIntent);
                 break;
             //下面的点击事件都是底部菜单栏中的事件
             case R.id.tvFindPassword:
@@ -95,11 +105,17 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                 break;
             case R.id.btnFindPassword:
                 //重置密码
-                modifyPassword();
+//                modifyPassword();
+                Intent modifyPwdIntent = new Intent(LoginActivity.this, SmsSendActivity.class);
+                modifyPwdIntent.putExtra("sign", "modifyPassword");
+                startActivity(modifyPwdIntent);
                 break;
             case R.id.btnSmsLogin:
                 //短信验证登录
-                smsLogin();
+//                smsLogin();
+                Intent smsLoginIntent = new Intent(LoginActivity.this, SmsSendActivity.class);
+                smsLoginIntent.putExtra("sign", "smsLogin");
+                startActivity(smsLoginIntent);
                 break;
             case R.id.btnCancel:
                 //取消退出底部菜单栏
@@ -109,6 +125,7 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                 break;
         }
     }
+
 
     /**
      * 短信验证登录
@@ -124,32 +141,32 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                     HashMap<String,Object> phoneMap = (HashMap<String, Object>) data;
                     final String phoneNumber = (String) phoneMap.get("phone");
                     //手机号提交到服务端，验证是否存在
-//                            RequestBody requestBody = new FormBody.Builder()
-//                            .add("phoneNumber", phoneNumber)
-//                            .build();
-//                            HttpUtil.postCallback(requestBody, Constants.URL + "/..**********", new okhttp3.Callback() {
-//                                @Override
-//                                public void onFailure(Call call, IOException e) {
-//                                    //异常情况
-//                                }
-//                                @Override
-//                                 public void onResponse(Call call, Response response) throws IOException {
-//                                    //接收服务端返回数据,并解析
-//                                    //手机号正确
-                    boolean isRight = true;
-                    if (isRight) {
-                        //登陆成功
-                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                        intent.putExtra("phoneNumber", phoneNumber);
-                        //发送昵称
-                        startActivity(intent);
-                        finish();
-                    } else {
-                        //手机号不存在，提示用户
-                        showDialog("错误", "手机号不存在。");
-                    }
-//                                }
-//                            });
+                    RequestBody requestBody = new FormBody.Builder()
+                    .add("phoneNumber", phoneNumber)
+                    .build();
+                    HttpUtil.postCallback(requestBody, Constants.VALIDATE_LOGIN_URL, new okhttp3.Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            //异常情况
+                        }
+                        @Override
+                         public void onResponse(Call call, Response response) throws IOException {
+                            //接收服务端返回数据,并解析json,得到用户所有信息
+
+                            //手机号正确
+                            boolean isRight = true;
+                            if (isRight) {
+                                //登陆成功
+                                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+
+                                startActivity(intent);
+                                finish();
+                            } else {
+                                //手机号不存在，提示用户
+                                showDialog("错误", "手机号不存在。");
+                            }
+                        }
+                    });
                 } else if (result == SMSSDK.RESULT_ERROR) {
 
                 }
@@ -173,31 +190,16 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                     HashMap<String,Object> phoneMap = (HashMap<String, Object>) data;
                     final String phoneNumber = (String) phoneMap.get("phone");
                     //手机号提交到服务端，验证是否存在
-//                            RequestBody requestBody = new FormBody.Builder()
-//                            .add("phoneNumber", phoneNumber)
-//                            .build();
-//                            HttpUtil.postCallback(requestBody, Constants.URL + "/..**********", new okhttp3.Callback() {
-//                                @Override
-//                                public void onFailure(Call call, IOException e) {
-//                                    //异常情况
-//                                }
-//                                @Override
-//                                 public void onResponse(Call call, Response response) throws IOException {
-//                                    //接收服务端返回数据,并解析
-//                                    //手机号正确
-                            boolean isRight = true;
-                            if (isRight) {
-                                //跳转到修改密码界面
-                                Intent intent = new Intent(LoginActivity.this, ModifyPwdActivity.class);
-                                intent.putExtra("phoneNumber", phoneNumber);
-                                //昵称
-                                startActivity(intent);
-                            } else {
-                                //手机号不存在，提示用户
-                                showDialog("错误", "手机号不存在。");
-                            }
-//                                }
-//                            });
+                    //手机号正确
+                    if (validatePhone()) {
+                        //跳转到修改密码界面
+                        Intent intent = new Intent(LoginActivity.this, ModifyPwdActivity.class);
+                        intent.putExtra("phoneNumber", phoneNumber);
+                        startActivity(intent);
+                    } else {
+                        //手机号不存在，提示用户
+//                        showDialog("错误", "该手机号没有注册。");
+                    }
                 } else if (result == SMSSDK.RESULT_ERROR) {
 
                 }
@@ -216,52 +218,40 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
         boolean real = validateIn(phoneNumber, password);
         if (real) {
             //登录提示
-            ladingProgressBar.setVisibility(View.VISIBLE);
-            ladingSign.setVisibility(View.VISIBLE);
-            progressbarBack.setVisibility(View.VISIBLE);
+            loadingProgerss.setVisibility(View.VISIBLE);
+            //密码进行MD5加密
+            password = MD5Util.md5(password);
             //向服务端发送数据进行验证
-//                RequestBody requestBody = new FormBody.Builder()
-//                        .add("phoneNumber", phoneNumber)
-//                        .add("password", password)
-//                        .build();
-//                HttpUtil.postCallback(requestBody, Constants.URL + "/..**********", new okhttp3.Callback() {
-//                    @Override
-//                    public void onFailure(Call call, IOException e) {
-//                        //异常情况
-//                    }
-//
-//                    @Override
-//                    public void onResponse(Call call, Response response) throws IOException {
-//                        //接收服务端返回数据,并解析
-//
-//                        boolean isRight = true;
-            if (phoneNumber.equals("15829211215") && password.equals("111111")) {
-                //数据验证正确,则跳转到主页面，并将用户信息发送
-                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                //发送数据
-//                            intent.putExtra("", "");
-                startActivity(intent);
-                finish();
-            } else {
-                //数据有误,提示用户，重新输入,并将密码清空
-                ladingProgressBar.setVisibility(View.GONE);
-                ladingSign.setVisibility(View.GONE);
-                progressbarBack.setVisibility(View.GONE);
-                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("登陆失败");
-                builder.setMessage("账号或密码错误，请重新输入。");
-                builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        //清空密码
-                        etPassword.setText("");
-                        dialogInterface.dismiss();
+            RequestBody requestBody = new FormBody.Builder()
+                    .add("phoneNumber", phoneNumber)
+                    .add("password", password)
+                    .build();
+            HttpUtil.postCallback(requestBody, Constants.LOGIN_URL, new okhttp3.Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    //异常情况
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    //接收服务端返回数据,并解析
+
+                    boolean isRight = true;
+                    if (isRight) {
+                        //数据验证正确,则跳转到主页面，并将用户信息发送
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        //发送数据user
+        //                            intent.putExtra("", "");
+                        startActivity(intent);
+                        finish();
+                    } else {
+                        //数据有误,提示用户，重新输入,并将密码清空
+                        loadingProgerss.setVisibility(View.GONE);
+                        //弹出窗口，提示用户
+                        showDialog("登陆失败", "账号或密码错误，请重新输入。");
                     }
-                });
-                builder.show();
-            }
-//                    }
-//                });
+                }
+            });
         }
     }
 
@@ -320,7 +310,7 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
         if (!permissionList.isEmpty()) {
             ActivityCompat.requestPermissions(this, permissionList.toArray(new String[permissionList.size()]), 1);
         } else {
-            registerPage();
+           initView();
         }
     }
 
@@ -337,14 +327,14 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                 if (grantResults.length > 0) {
                     for (int result : grantResults) {
                         if (result != PackageManager.PERMISSION_GRANTED) {
-                            Toast.makeText(this, "必须开启所有权限", Toast.LENGTH_SHORT).show();
+                            ToastUtil.showToast(this, "必须开启所有权限");
                             finish();
                             return;
                         }
                     }
-                    registerPage();
+                    initView();
                 } else {
-                    Toast.makeText(this, "发生未知错误", Toast.LENGTH_SHORT).show();
+                    ToastUtil.showToast(this, "发生未知错误");
                     finish();
                 }
                 break;
@@ -385,10 +375,10 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
      */
     private boolean validateIn(String phoneNumber, String password) {
         if (phoneNumber.isEmpty() || phoneNumber.trim().equals("")) {
-            Toast.makeText(this, "请输入账号", Toast.LENGTH_SHORT).show();
+            ToastUtil.showToast(this, "请输入账号");
             return false;
         } else if (password.isEmpty() || password.equals("")) {
-            Toast.makeText(this, "请输入密码", Toast.LENGTH_SHORT).show();
+            ToastUtil.showToast(this, "请输入密码");
             return false;
         } else if (phoneNumber.length() != 11) {
             showDialog("登陆失败", "请输入正确的手机号。");
@@ -403,6 +393,24 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
         return true;
     }
 
+
+//    /**
+//     * 手机号验证失败，弹出对话框,点击跳转到登陆
+//     * @param title
+//     * @param mes
+//     */
+//    public void showDialogToLogin(String title, String mes) {
+//        final AlertDialog.Builder builder = new AlertDialog.Builder();
+//        builder.setTitle(title);
+//        builder.setMessage(mes);
+//        builder.setPositiveButton("确定", new DialogInterface.OnClickListener() {
+//            @Override
+//            public void onClick(DialogInterface dialogInterface, int i) {
+//                dialogInterface.dismiss();
+//            }
+//        });
+//        builder.show();
+//    }
 
     /**
      * 弹出对话框

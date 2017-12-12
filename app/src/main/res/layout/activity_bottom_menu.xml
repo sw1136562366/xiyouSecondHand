@@ -31,7 +31,7 @@
         android:textColor="@color/black"
         android:textSize="18sp" />
 
-    <View  android:layout_height="20px"
+    <View  android:layout_height="25px"
         android:layout_width="match_parent"
         android:background="#EDEDED"
         />

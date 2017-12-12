@@ -9,15 +9,27 @@ import android.text.InputFilter;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.sendhand.xiyousecondhand.R;
+import com.sendhand.xiyousecondhand.entry.Constants;
 import com.sendhand.xiyousecondhand.util.HttpUtil;
+import com.sendhand.xiyousecondhand.util.LogUtil;
+import com.sendhand.xiyousecondhand.util.MD5Util;
 
+import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import okhttp3.Call;
+import okhttp3.FormBody;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 import static com.sendhand.xiyousecondhand.R.drawable.login_button_back;
 
@@ -26,25 +38,32 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
     private EditText etUserName;
     private EditText etPassword;
     private Button btnRegister;
-    private String phoneNumber;
+    private ProgressBar ladingProgressBar;
+    private TextView ladingSign;
+    private TextView progressbarBack;
+    private static String phoneNumber;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.register_layout);
+        ladingProgressBar = (ProgressBar) findViewById(R.id.loading_progressBar);
+        ladingSign = (TextView) findViewById(R.id.lading_sign);
+        progressbarBack = (TextView) findViewById(R.id.progress_background);
         phoneNumber = getIntent().getStringExtra("phoneNumber");
         etUserName = (EditText) findViewById(R.id.etUserName);
         etPassword = (EditText) findViewById(R.id.etPassword);
         btnRegister = (Button) findViewById(R.id.btnRegister);
-        btnRegister.setOnClickListener(this);
+
         //设置按钮不可用
         btnRegister.setEnabled(false);
         btnRegister.setBackgroundColor(Color.GRAY);
         setUnUseBtn();
+        btnRegister.setOnClickListener(this);
     }
 
     /**
-     * 设置注册按钮不可用户
+     * 输入框监听器
      */
     private void setUnUseBtn() {
         //EditText监听器
@@ -77,16 +96,97 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btnRegister:
+                ladingProgressBar.setVisibility(View.VISIBLE);
+                ladingSign.setVisibility(View.VISIBLE);
+                progressbarBack.setVisibility(View.VISIBLE);
+
                 String userName = etUserName.getText().toString();
                 String password = etPassword.getText().toString();
+                LogUtil.d("RegisterActivity", "1111");
+                LogUtil.d("RegisterActivity", userName);
+                LogUtil.d("RegisterActivity", password);
+                //密码加密
+                password = MD5Util.md5(password);
+                //验证手机号
+//                if (validatePhone()) {
+                    //向服务端发送数据
+                    RequestBody requestBody = new FormBody.Builder()
+                            .add("phoneNumber", phoneNumber)
+                            .add("userName", userName)
+                            .add("password", password)
+                            .build();
+//                try {
+//                    String returnGet = HttpUtil.post(Constants.REGISTER_URL, requestBody);
+//                    if (returnGet.equals("1")) {
+////                                //注册成功，跳转到登录
+//                        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+//                        intent.putExtra("phoneNumber", phoneNumber);
+//                        startActivity(intent);
+//                        finish();
+//                    }
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+                    HttpUtil.postCallback(requestBody, Constants.REGISTER_URL, new okhttp3.Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            //异常情况
+                            LogUtil.d("RegisterActivity", "mess" +  e.getMessage());
+                        }
 
-                //向服务端发送数据
-                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                intent.putExtra("phoneNumber", phoneNumber);
-                intent.putExtra("password", password);
-                startActivity(intent);
-                finish();
+                        @Override
+                        public void onResponse(Call call, Response response) throws IOException {
+                            String returnGet = response.body().string();
+                            LogUtil.d("RegisterActivity", "return" + returnGet);
+                            if (returnGet.equals("1") || returnGet == "1") {
+                                //注册成功，跳转到登录
+                                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                                intent.putExtra("phoneNumber", phoneNumber);
+                                startActivity(intent);
+                                finish();
+                            } else {
+                                //打印错误信息
+                                ladingProgressBar.setVisibility(View.GONE);
+                                ladingSign.setVisibility(View.GONE);
+                                progressbarBack.setVisibility(View.GONE);
+                            }
+                        }
+                    });
+//                }
+                break;
+            default:
+                break;
         }
+    }
+
+    /**
+     * 验证手机号是否已经注册
+     * @return
+     */
+    public static boolean validatePhone() {
+        final boolean[] bool = new boolean[1];
+        //向服务端发送数据
+        RequestBody requestBody = new FormBody.Builder()
+                .add("phoneNumber", phoneNumber)
+                .build();
+        HttpUtil.postCallback(requestBody, Constants.VALIDATE_PHONE_URL, new okhttp3.Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                //异常情况
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                String returnGet = response.body().toString();
+                if (returnGet.equals("1")) {
+                   //正确
+                    bool[0] = true;
+                } else {
+                    bool[0] = false;
+                }
+            }
+        });
+        return bool[0];
     }
 
     /**

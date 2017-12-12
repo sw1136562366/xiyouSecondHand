@@ -13,7 +13,10 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.sendhand.xiyousecondhand.R;
+import com.sendhand.xiyousecondhand.util.MD5Util;
+import com.sendhand.xiyousecondhand.util.ToastUtil;
 
+import static android.R.attr.password;
 import static com.sendhand.xiyousecondhand.activity.RegisterActivity.setEditTextInhibitInputSpace;
 import static com.sendhand.xiyousecondhand.activity.RegisterActivity.setEditTextInhibitInputSpeChat;
 
@@ -48,15 +51,16 @@ public class ModifyPwdActivity extends BaseActivity implements View.OnClickListe
         switch (view.getId()) {
             case R.id.btnModifyPwd:
                 if (etConPassword.getText().toString().equals(etPassword.getText().toString())) {
+                    //密码进行MD5加密
+                    String password = MD5Util.md5(etPassword.getText().toString());
                     //将密码传到服务端，保存
 
                     Intent intent = new Intent(ModifyPwdActivity.this, LoginActivity.class);
                     intent.putExtra("phoneNumber", phoneNumber);
-                    intent.putExtra("password", etPassword.getText());
                     startActivity(intent);
                     finish();
                 } else {
-                    Toast.makeText(ModifyPwdActivity.this, "密码不一致，请重新设置！", Toast.LENGTH_SHORT).show();
+                    ToastUtil.showToast(ModifyPwdActivity.this, "密码不一致，请重新设置！");
                 }
                 break;
             default:

@@ -1,6 +1,7 @@
 package com.sendhand.xiyousecondhand.util;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -13,10 +14,15 @@ import okhttp3.RequestBody;
 
 public class HttpUtil {
     public static OkHttpClient client = null;
+    // 超时时间
+    public static final int TIMEOUT = 1000 * 600;
 
     static {
         if (client == null) {
             client = new OkHttpClient();
+//            client.newBuilder().connectTimeout(TIMEOUT, TimeUnit.SECONDS)
+//                    .writeTimeout(TIMEOUT, TimeUnit.SECONDS)
+//                    .readTimeout(TIMEOUT, TimeUnit.SECONDS).build();
         }
     }
 
