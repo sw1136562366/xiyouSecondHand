@@ -39,22 +39,25 @@
             android:name="Mob-AppSecret"
             android:value="b1f70cb9049e8a9ffa7bd995fb27a126" />
 
-        <activity android:name=".activity.MainActivity" />
-        <activity android:name=".activity.LoginActivity">
+        <activity android:name=".view.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activity.RegisterActivity"></activity>
+
+        <activity android:name=".view.LoginActivity">
+
+        </activity>
+        <activity android:name=".view.RegisterActivity"></activity>
         <activity
             android:name="com.mob.tools.MobUIShell"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
             android:windowSoftInputMode="stateHidden|adjustResize" />
-        <activity android:name=".activity.ModifyPwdActivity" />
-        <activity android:name=".activity.SmsSendActivity"></activity>
+        <activity android:name=".view.ModifyPwdActivity" />
+        <activity android:name=".view.SmsSendActivity"></activity>
     </application>
 
 </manifest>

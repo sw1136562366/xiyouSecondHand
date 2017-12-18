@@ -1,4 +1,4 @@
-package com.sendhand.xiyousecondhand.activity;
+package com.sendhand.xiyousecondhand.view;
 
 import android.content.Intent;
 import android.graphics.Color;
@@ -14,7 +14,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.sendhand.xiyousecondhand.R;
 import com.sendhand.xiyousecondhand.entry.Constants;

@@ -1,4 +1,4 @@
-package com.sendhand.xiyousecondhand.activity;
+package com.sendhand.xiyousecondhand.view;
 
 import android.Manifest;
 import android.app.Dialog;
@@ -9,7 +9,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -17,16 +16,12 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.sendhand.xiyousecondhand.R;
-import com.sendhand.xiyousecondhand.application.MyApplication;
 import com.sendhand.xiyousecondhand.entry.Constants;
 import com.sendhand.xiyousecondhand.util.HttpUtil;
 import com.sendhand.xiyousecondhand.util.MD5Util;
@@ -45,7 +40,7 @@ import okhttp3.FormBody;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-import static com.sendhand.xiyousecondhand.activity.RegisterActivity.validatePhone;
+import static com.sendhand.xiyousecondhand.view.RegisterActivity.validatePhone;
 
 public class LoginActivity extends BaseActivity implements View.OnClickListener {
 

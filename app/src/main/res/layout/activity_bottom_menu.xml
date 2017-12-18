@@ -4,7 +4,7 @@
     android:layout_height="300dp"
     android:background="#ffffff"
     android:orientation="vertical"
-   >
+    >
 
     <TextView
         android:id="@+id/btnFindPassword"

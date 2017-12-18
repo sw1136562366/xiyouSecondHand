@@ -1,4 +1,4 @@
-package com.sendhand.xiyousecondhand.activity;
+package com.sendhand.xiyousecondhand.view;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;

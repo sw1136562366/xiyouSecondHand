@@ -1,24 +1,20 @@
-package com.sendhand.xiyousecondhand.activity;
+package com.sendhand.xiyousecondhand.view;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
-import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.sendhand.xiyousecondhand.R;
 import com.sendhand.xiyousecondhand.util.MD5Util;
 import com.sendhand.xiyousecondhand.util.ToastUtil;
 
-import static android.R.attr.password;
-import static com.sendhand.xiyousecondhand.activity.RegisterActivity.setEditTextInhibitInputSpace;
-import static com.sendhand.xiyousecondhand.activity.RegisterActivity.setEditTextInhibitInputSpeChat;
+import static com.sendhand.xiyousecondhand.view.RegisterActivity.setEditTextInhibitInputSpace;
+import static com.sendhand.xiyousecondhand.view.RegisterActivity.setEditTextInhibitInputSpeChat;
 
 /**
  * 重置密码
