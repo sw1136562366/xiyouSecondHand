@@ -81,8 +81,8 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.get_code:
-//                tvGetCode.requestFocus();
-//                if (phoneIsRight()) {
+                tvGetCode.requestFocus();
+                if (phoneIsRight()) {
                     tvGetCodesClicked = true;
                     tvGetCode.setEnabled(false);
                     tvGetCode.setBackgroundColor(Color.GRAY);
@@ -90,7 +90,7 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
                     String phone = etPhone.getText().toString().trim();
                     SMSSDK.getVerificationCode("86", phone);//发送短信验证码到手机号
                     timer.start();//使用计时器 设置验证码的时间限制
-//                }
+                }
                 break;
             case R.id.btnSms:
                 submitInfo();
@@ -118,17 +118,34 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     String getReturn = response.body().string();
-                    if (getReturn.equals("1")) {
-                        isNotRegister[0] = true;
-                    } else {
-                        isNotRegister[0] = false;
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                ToastUtil.showToast(SmsSendActivity.this, "该手机号已注册");
-                            }
-                        });
+                    if (sign.equals("register")) {
+                        if (getReturn.equals("1")) {
+                            //手机号没注册，继续进行注册
+                            isNotRegister[0] = true;
+                        } else {
+                            isNotRegister[0] = false;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ToastUtil.showToast(SmsSendActivity.this, "该手机号已注册");
+                                }
+                            });
+                        }
+                    } else if (sign.equals("modifyPassword") || sign.equals("smsLogin")) {
+                        if (getReturn.equals("0")) {
+                            //手机号已注册，可以进行修改和登录
+                            isNotRegister[0] = true;
+                        } else {
+                            isNotRegister[0] = false;
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ToastUtil.showToast(SmsSendActivity.this, "该手机号未注册");
+                                }
+                            });
+                        }
                     }
+
                 }
             });
         return isNotRegister[0];

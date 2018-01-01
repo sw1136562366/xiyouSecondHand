@@ -5,6 +5,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.sendhand.xiyousecondhand.R;
+import com.sendhand.xiyousecondhand.entry.User;
 import com.sendhand.xiyousecondhand.util.Utils;
 import com.sendhand.xiyousecondhand.view.fragment.CityFragment;
 import com.sendhand.xiyousecondhand.view.fragment.HomeFragment;
@@ -12,6 +13,8 @@ import com.sendhand.xiyousecondhand.view.fragment.MessageFragment;
 import com.sendhand.xiyousecondhand.view.fragment.PersonFragment;
 
 public class MainActivity extends BaseActivity implements SwipeBackActivityBase {
+
+    public User user;
 
     private static final String TAG_PAGE_HOME = "首页";
     private static final String TAG_PAGE_CITY = "同城";
@@ -26,6 +29,9 @@ public class MainActivity extends BaseActivity implements SwipeBackActivityBase 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //获取用户数据
+        user = getIntent().getParcelableExtra("user_data");
+
         mNavigateTabBar = (MainNavigateTabBar) findViewById(R.id.mainTabBar);
 
         mNavigateTabBar.onRestoreInstanceState(savedInstanceState);
@@ -45,6 +51,10 @@ public class MainActivity extends BaseActivity implements SwipeBackActivityBase 
     }
 
 
+    /**
+     * 发布商品
+     * @param v
+     */
     public void onClickPublish(View v) {
         Toast.makeText(this, "发布", Toast.LENGTH_LONG).show();
     }

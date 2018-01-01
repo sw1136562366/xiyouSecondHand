@@ -3,22 +3,21 @@
     android:id="@+id/rlTopTitle"
     android:layout_width="fill_parent"
     android:layout_height="@dimen/top_title_height"
-    android:background="@color/no_sel" >
+    android:background="@color/white" >
 
     <!-- 左边按钮 -->
 
-    <Button
+    <TextView
         android:id="@+id/btnTopTitleLeft"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="15dp"
+        android:layout_height="15dp"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
-        android:layout_marginLeft="5dip"
-        android:background="@drawable/btn_back_selector"
-        android:text="@string/back"
+        android:layout_marginLeft="15dip"
+        android:background="@mipmap/btn_back1"
         android:textColor="@color/white"
-        android:textSize="16sp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:onClick="true"/>
     <!-- 左边文本 -->
 
     <TextView
@@ -27,6 +26,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_centerVertical="true"
+        android:textColor="@color/black"
         android:visibility="gone" />
     <!-- 中间文本 -->
 
@@ -35,8 +35,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:textColor="@color/white"
-        android:textSize="24sp" />
+        android:textColor="@color/black"
+        android:textSize="15sp" />
     <!-- 中间Logo -->
 
     <ImageView

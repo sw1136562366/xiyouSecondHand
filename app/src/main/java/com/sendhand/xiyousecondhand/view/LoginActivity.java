@@ -23,6 +23,8 @@ import android.widget.TextView;
 
 import com.sendhand.xiyousecondhand.R;
 import com.sendhand.xiyousecondhand.entry.Constants;
+import com.sendhand.xiyousecondhand.entry.User;
+import com.sendhand.xiyousecondhand.util.GsonUtil;
 import com.sendhand.xiyousecondhand.util.HttpUtil;
 import com.sendhand.xiyousecondhand.util.MD5Util;
 import com.sendhand.xiyousecondhand.util.ToastUtil;
@@ -230,20 +232,20 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     //接收服务端返回数据,并解析
-
-                    boolean isRight = true;
-                    if (isRight) {
-                        //数据验证正确,则跳转到主页面，并将用户信息发送
-                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                        //发送数据user
-        //                            intent.putExtra("", "");
-                        startActivity(intent);
-                        finish();
-                    } else {
-                        //数据有误,提示用户，重新输入,并将密码清空
+                    if (response.body().string().equals("0")) {
+                        //数据有误,提示用户
                         loadingProgerss.setVisibility(View.GONE);
                         //弹出窗口，提示用户
                         showDialog("登陆失败", "账号或密码错误，请重新输入。");
+                    } else {
+                        //数据验证正确,则跳转到主页面，并将用户信息发送
+                        String jsonUser = response.body().string();
+                        User user = GsonUtil.parseJsonWithGson(jsonUser);
+                        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                        //发送数据user
+                        intent.putExtra("user_data", user);
+                        startActivity(intent);
+                        finish();
                     }
                 }
             });
@@ -289,9 +291,6 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
             permissionList.add(Manifest.permission.READ_PHONE_STATE);
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
             permissionList.add(Manifest.permission.RECEIVE_SMS);
@@ -339,7 +338,7 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
     }
 
     /**
-     * 转到短信验证界面
+     * 转到短信验证界面(旧)
      */
     private void registerPage() {
         RegisterPage registerPage = new RegisterPage();

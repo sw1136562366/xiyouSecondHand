@@ -10,8 +10,19 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.sendhand.xiyousecondhand.R;
+import com.sendhand.xiyousecondhand.entry.Constants;
+import com.sendhand.xiyousecondhand.entry.User;
+import com.sendhand.xiyousecondhand.util.GsonUtil;
+import com.sendhand.xiyousecondhand.util.HttpUtil;
 import com.sendhand.xiyousecondhand.util.MD5Util;
 import com.sendhand.xiyousecondhand.util.ToastUtil;
+
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.FormBody;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 import static com.sendhand.xiyousecondhand.view.RegisterActivity.setEditTextInhibitInputSpace;
 import static com.sendhand.xiyousecondhand.view.RegisterActivity.setEditTextInhibitInputSpeChat;
@@ -50,11 +61,26 @@ public class ModifyPwdActivity extends BaseActivity implements View.OnClickListe
                     //密码进行MD5加密
                     String password = MD5Util.md5(etPassword.getText().toString());
                     //将密码传到服务端，保存
+                    RequestBody requestBody = new FormBody.Builder()
+                            .add("phoneNumber", phoneNumber)
+                            .add("password", password)
+                            .build();
+                    HttpUtil.postCallback(requestBody, Constants.RESETTING_PASSWORD_URL, new okhttp3.Callback() {
+                        @Override
+                        public void onFailure(Call call, IOException e) {
+                            //异常情况
+                        }
 
-                    Intent intent = new Intent(ModifyPwdActivity.this, LoginActivity.class);
-                    intent.putExtra("phoneNumber", phoneNumber);
-                    startActivity(intent);
-                    finish();
+                        @Override
+                        public void onResponse(Call call, Response response) throws IOException {
+                            //接收服务端返回数据,并解析
+
+                            Intent intent = new Intent(ModifyPwdActivity.this, LoginActivity.class);
+                            intent.putExtra("phoneNumber", phoneNumber);
+                            startActivity(intent);
+                            finish();
+                        }
+                    });
                 } else {
                     ToastUtil.showToast(ModifyPwdActivity.this, "密码不一致，请重新设置！");
                 }
