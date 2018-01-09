@@ -8,7 +8,7 @@ import com.sendhand.xiyousecondhand.R;
 import com.sendhand.xiyousecondhand.entry.User;
 import com.sendhand.xiyousecondhand.util.Utils;
 import com.sendhand.xiyousecondhand.view.fragment.CityFragment;
-import com.sendhand.xiyousecondhand.view.fragment.HomeFragment;
+import com.sendhand.xiyousecondhand.view.fragment.home.HomeFragment;
 import com.sendhand.xiyousecondhand.view.fragment.MessageFragment;
 import com.sendhand.xiyousecondhand.view.fragment.PersonFragment;
 
@@ -17,7 +17,7 @@ public class MainActivity extends BaseActivity implements SwipeBackActivityBase 
     public User user;
 
     private static final String TAG_PAGE_HOME = "首页";
-    private static final String TAG_PAGE_CITY = "同城";
+    private static final String TAG_PAGE_CITY = "分类";
     private static final String TAG_PAGE_PUBLISH = "发布";
     private static final String TAG_PAGE_MESSAGE = "消息";
     private static final String TAG_PAGE_PERSON = "我的";
@@ -30,7 +30,7 @@ public class MainActivity extends BaseActivity implements SwipeBackActivityBase 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //获取用户数据
-        user = getIntent().getParcelableExtra("user_data");
+        user = (User) getIntent().getSerializableExtra("user_data");
 
         mNavigateTabBar = (MainNavigateTabBar) findViewById(R.id.mainTabBar);
 

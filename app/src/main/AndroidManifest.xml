@@ -41,14 +41,18 @@
             android:value="b1f70cb9049e8a9ffa7bd995fb27a126" />
 
         <activity android:name=".view.MainActivity">
+
+        </activity>
+        <activity android:name=".view.LoginActivity" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".view.LoginActivity" />
-        <activity android:name=".view.RegisterActivity" />
+        <activity android:name=".view.RegisterActivity" >
+
+        </activity>
         <activity
             android:name="com.mob.tools.MobUIShell"
             android:configChanges="keyboardHidden|orientation|screenSize"

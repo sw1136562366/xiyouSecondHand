@@ -30,7 +30,7 @@ public class PersonInfoActivity extends BaseActivity implements View.OnClickList
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_person_info);
-        user = getIntent().getParcelableExtra("user_data");
+        user = (User) getIntent().getSerializableExtra("user_data");
         initView();
 
     }

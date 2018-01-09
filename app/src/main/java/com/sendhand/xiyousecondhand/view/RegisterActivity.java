@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 
 import okhttp3.Call;
 import okhttp3.FormBody;
+import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
@@ -98,9 +99,9 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
                 ladingSign.setVisibility(View.VISIBLE);
                 progressbarBack.setVisibility(View.VISIBLE);
 
-                String userName = etUserName.getText().toString();
+                final String userName = etUserName.getText().toString();
                 String password = etPassword.getText().toString();
-                LogUtil.d("RegisterActivity", "1111");
+                LogUtil.d("RegisterActivity", phoneNumber);
                 LogUtil.d("RegisterActivity", userName);
                 LogUtil.d("RegisterActivity", password);
                 //密码加密
@@ -113,40 +114,35 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
                             .add("userName", userName)
                             .add("password", password)
                             .build();
-//                try {
-//                    String returnGet = HttpUtil.post(Constants.REGISTER_URL, requestBody);
-//                    if (returnGet.equals("1")) {
-////                                //注册成功，跳转到登录
-//                        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-//                        intent.putExtra("phoneNumber", phoneNumber);
-//                        startActivity(intent);
-//                        finish();
-//                    }
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
                     HttpUtil.postCallback(requestBody, Constants.REGISTER_URL, new okhttp3.Callback() {
                         @Override
                         public void onFailure(Call call, IOException e) {
                             //异常情况
-                            LogUtil.d("RegisterActivity", "mess" +  e.getMessage());
+                            LogUtil.d("RegisterActivity", e.getMessage());
                         }
 
                         @Override
                         public void onResponse(Call call, Response response) throws IOException {
-                            String returnGet = response.body().string();
-                            LogUtil.d("RegisterActivity", "return" + returnGet);
-                            if (returnGet.equals("1") || returnGet == "1") {
-                                //注册成功，跳转到登录
-                                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                                intent.putExtra("phoneNumber", phoneNumber);
-                                startActivity(intent);
-                                finish();
-                            } else {
-                                //打印错误信息
-                                ladingProgressBar.setVisibility(View.GONE);
-                                ladingSign.setVisibility(View.GONE);
-                                progressbarBack.setVisibility(View.GONE);
+                            if (response.isSuccessful()) {
+                                String returnGet = response.body().string();
+                                LogUtil.d("RegisterActivity", "return:" + returnGet);
+                                if (returnGet.equals("1") || returnGet == "1") {
+                                    //注册成功，跳转到登录
+                                    Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                                    intent.putExtra("phoneNumber", phoneNumber);
+                                    startActivity(intent);
+                                    finish();
+                                } else {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            //打印错误信息
+                                            ladingProgressBar.setVisibility(View.GONE);
+                                            ladingSign.setVisibility(View.GONE);
+                                            progressbarBack.setVisibility(View.GONE);
+                                        }
+                                    });
+                                }
                             }
                         }
                     });

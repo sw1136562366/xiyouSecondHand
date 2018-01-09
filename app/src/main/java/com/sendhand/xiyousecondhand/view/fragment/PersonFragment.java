@@ -6,6 +6,7 @@ import android.content.ContentUris;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -27,6 +28,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,23 +37,40 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.sendhand.xiyousecondhand.R;
+import com.sendhand.xiyousecondhand.application.MyApplication;
+import com.sendhand.xiyousecondhand.entry.Constants;
 import com.sendhand.xiyousecondhand.entry.User;
 import com.sendhand.xiyousecondhand.util.BitmapBlurUtil;
+import com.sendhand.xiyousecondhand.util.HttpUtil;
 import com.sendhand.xiyousecondhand.util.LogUtil;
 import com.sendhand.xiyousecondhand.util.ToastUtil;
+import com.sendhand.xiyousecondhand.view.LoginActivity;
 import com.sendhand.xiyousecondhand.view.MainActivity;
 import com.sendhand.xiyousecondhand.view.ModifyPwdActivity;
 import com.sendhand.xiyousecondhand.view.PersonInfoActivity;
 import com.sendhand.xiyousecondhand.view.SmsSendActivity;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import okhttp3.Call;
+import okhttp3.FormBody;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 import static android.app.Activity.RESULT_OK;
+import static com.sendhand.xiyousecondhand.util.SharedPrefercesUtil.clearData;
 
 
 public class PersonFragment extends Fragment implements View.OnClickListener{
@@ -64,6 +83,14 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
     protected static final int TAKE_PICTURE = 1;
     private static final int CROP_SMALL_PICTURE = 2;
     protected static Uri imageUri;
+    //显示头像
+    private  Handler handler = new Handler(){
+        public void handleMessage(Message msg) {
+            Bitmap bitmap = (Bitmap)msg.obj;
+            pull_img.setImageBitmap(bitmap);//将图片的流转换成图片
+            profile_image.setImageBitmap(bitmap);
+        }
+    };
 
     public PersonFragment() {
         super();
@@ -79,11 +106,27 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_person,null);
+        initView(view);
+        /**
+         * 读取头像
+         * 先从sharedpreferences读取，未读到再从本地读取，未读到再从服务器读取
+         */
+        if (!getBitmapFromSharedPreferences()) {
+//            if (!readImage()) {
+                //网络请求后台图片流
+                //getImageFromServer(Constants.GET_IMAGE_BASEURL + "     ");
+//            }
+        }
+
+        return view;
+    }
+
+    private void initView(View view) {
         //设置标题
 //        TextView titleText = view.findViewById(R.id.tvTopTitleCenter);
 //        titleText.setText("我的");
         TextView tvUserName = view.findViewById(R.id.tvUserName);
-//        tvUserName.setText(user.getUsername());
+        tvUserName.setText(user.getUsername());
         pull_img = view.findViewById(R.id.pull_img);
         profile_image = view.findViewById(R.id.profile_image);
         TextView tvEditUserInfo = view.findViewById(R.id.tvEditUserInfo);
@@ -98,33 +141,6 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
         tvWillBuy.setOnClickListener(this);
         tvLoginout.setOnClickListener(this);
         profile_image.setOnClickListener(this);
-
-
-        /**
-         * 读取头像
-         * 先从本地读取，未读到再从服务器读取
-         */
-        if (!readImage()) {
-            //向服务器发起网络请求
-
-        }
-
-
-        //大头像
-//        Resources res = getResources();
-//        //读取用户头像
-//        Bitmap bmp = BitmapFactory.decodeResource(res, R.mipmap.image);
-//        BitmapBlurUtil.addTask(bmp, new Handler() {
-//            @Override
-//            public void handleMessage(Message msg) {
-//                super.handleMessage(msg);
-//                Drawable drawable = (Drawable) msg.obj;
-//                pull_img.setImageDrawable(drawable);
-//
-//            }
-//        });
-
-        return view;
     }
 
     @Override
@@ -148,14 +164,6 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
             //编辑资料
             case R.id.tvEditUserInfo:
                 Intent editInfoIntent = new Intent(getActivity(), PersonInfoActivity.class);
-                user = new User();
-                user.setUsername("啦啦啦");
-                user.setAge(22);
-                user.setSex("男");
-                user.setAddress("陕西省西安市长安区西安邮电大学东区");
-                user.setEmail("1136562366@qq.com");
-                user.setPostwd("714300");
-                user.setSchool("西安邮电大学");
                 editInfoIntent.putExtra("user_data",user);
                 startActivity(editInfoIntent);
                 break;
@@ -175,11 +183,34 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
                 break;
             //登出
             case R.id.tvLoginout:
-
+                logout();
                 break;
             default:
                 break;
         }
+    }
+
+    /**
+     * 从服务器请求图片
+     * @param imageUrl
+     */
+    private void getImageFromServer(String imageUrl) {
+        HttpUtil.getCallback(imageUrl, new okhttp3.Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                LogUtil.d("PersonFragement", e.getMessage());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                //得到图片的流
+                InputStream inputStream = response.body().byteStream();
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                Message message = new Message();
+                message.obj = bitmap;
+                handler.sendMessage(message);
+            }
+        });
     }
 
     /**
@@ -237,9 +268,10 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
                         Bitmap bitmap = BitmapFactory.decodeStream(getActivity().getContentResolver().openInputStream(imageUri));
                         pull_img.setImageBitmap(bitmap);
                         profile_image.setImageBitmap(bitmap);
-                        //图片缓存
-                        saveImage(bitmap);
-                        //图片上传到服务器
+                        //图片缓存到本地
+//                        saveImage(bitmap);
+                        //图片上传到服务器,并且缓存
+                        saveBitmapToSharedPreferences(bitmap);
 
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
@@ -323,15 +355,108 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
             Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
             pull_img.setImageBitmap(bitmap);
             profile_image.setImageBitmap(bitmap);
-            //图片缓存
-            saveImage(bitmap);
-            //图片上传到服务器
+            //图片缓存本地SD卡
+//            saveImage(bitmap);
+            //图片保存到sharedPreferences，并且上传
+            saveBitmapToSharedPreferences(bitmap);
 
 
         } else {
             Toast.makeText(getActivity(), "获取图片路径失败", Toast.LENGTH_SHORT).show();
         }
     }
+
+    /**
+     * 登出
+     */
+    private void logout() {
+        //弹出提示框
+        final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("登出");
+        builder.setMessage("确认退出登录?");
+        builder.setPositiveButton("取消", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+            }
+        });
+        builder.setNegativeButton("确定", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                //清空sharedPreferences
+                clearData(MyApplication.getContext());
+                //跳转登录
+                Intent intent = new Intent(getActivity(), LoginActivity.class);
+                startActivity(intent);
+                getActivity().finish();
+            }
+        });
+        builder.show();
+    }
+
+    //保存图片到SharedPreferences
+    private void saveBitmapToSharedPreferences(Bitmap bitmap) {
+        // Bitmap bitmap=BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
+        //第一步:将Bitmap压缩至字节数组输出流ByteArrayOutputStream
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 80, byteArrayOutputStream);
+        //第二步:利用Base64将字节数组输出流中的数据转换成字符串String
+        byte[] byteArray = byteArrayOutputStream.toByteArray();
+        String imageString = new String(Base64.encodeToString(byteArray, Base64.DEFAULT));
+        //第三步:将String保持至SharedPreferences
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("user_image", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("image", imageString);
+        editor.commit();
+
+        //上传头像
+       // uploadImage(imageString,"");
+    }
+
+
+    /**
+     * 上传头像
+     * @param imgStr
+     * @param imgName
+     */
+    public  void uploadImage(String imgStr, String imgName) {
+        RequestBody requestBody = new FormBody.Builder()
+                .add("phoneNumber", user.getTel())
+                .add("image", imgStr)
+                .build();
+        HttpUtil.postCallback(requestBody, Constants.UPLOAD_IMAGE_URL, new okhttp3.Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+
+            }
+        });
+    }
+
+    //从SharedPreferences获取图片
+    private boolean getBitmapFromSharedPreferences(){
+        boolean isGet = false;
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("user_image", Context.MODE_PRIVATE);
+        //第一步:取出字符串形式的Bitmap
+        String imageString=sharedPreferences.getString("image", "");
+        //第二步:利用Base64将字符串转换为ByteArrayInputStream
+        byte[] byteArray=Base64.decode(imageString, Base64.DEFAULT);
+        if(byteArray.length !=0){
+            isGet = true;
+            ByteArrayInputStream byteArrayInputStream=new ByteArrayInputStream(byteArray);
+
+            //第三步:利用ByteArrayInputStream生成Bitmap
+            Bitmap bitmap= BitmapFactory.decodeStream(byteArrayInputStream);
+            profile_image.setImageBitmap(bitmap);
+            pull_img.setImageBitmap(bitmap);
+        }
+        return isGet;
+    }
+
 
     /**
      * 申请权限

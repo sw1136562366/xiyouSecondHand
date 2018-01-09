@@ -24,7 +24,7 @@ public class ModifyInfoActivity extends AppCompatActivity implements View.OnClic
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_modify_info);
         what_info = getIntent().getStringExtra("what_info");
-        user = getIntent().getParcelableExtra("user_data");
+        user = (User) getIntent().getSerializableExtra("user_data");
         initView();
 
     }

@@ -20,9 +20,9 @@ public class HttpUtil {
     static {
         if (client == null) {
             client = new OkHttpClient();
-//            client.newBuilder().connectTimeout(TIMEOUT, TimeUnit.SECONDS)
-//                    .writeTimeout(TIMEOUT, TimeUnit.SECONDS)
-//                    .readTimeout(TIMEOUT, TimeUnit.SECONDS).build();
+            client.newBuilder().connectTimeout(TIMEOUT, TimeUnit.SECONDS)
+                    .writeTimeout(TIMEOUT, TimeUnit.SECONDS)
+                    .readTimeout(TIMEOUT, TimeUnit.SECONDS).build();
         }
     }
 

@@ -22,10 +22,12 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.sendhand.xiyousecondhand.R;
+import com.sendhand.xiyousecondhand.application.MyApplication;
 import com.sendhand.xiyousecondhand.entry.Constants;
 import com.sendhand.xiyousecondhand.entry.User;
 import com.sendhand.xiyousecondhand.util.GsonUtil;
 import com.sendhand.xiyousecondhand.util.HttpUtil;
+import com.sendhand.xiyousecondhand.util.LogUtil;
 import com.sendhand.xiyousecondhand.util.MD5Util;
 import com.sendhand.xiyousecondhand.util.ToastUtil;
 
@@ -42,6 +44,8 @@ import okhttp3.FormBody;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
+import static com.sendhand.xiyousecondhand.util.SharedPrefercesUtil.readObject;
+import static com.sendhand.xiyousecondhand.util.SharedPrefercesUtil.saveObject;
 import static com.sendhand.xiyousecondhand.view.RegisterActivity.validatePhone;
 
 public class LoginActivity extends BaseActivity implements View.OnClickListener {
@@ -50,9 +54,20 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
     private EditText etPassword;
     private Dialog mCameraDialog; //底部菜单栏
     private RelativeLayout loadingProgerss;
+    public static LoginActivity loginActivitySign = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //检查sharedPreferences中有没有用户信息
+        User user = (User) readObject(MyApplication.getContext());
+        if (user != null) {
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            //发送数据user
+            intent.putExtra("user_data", user);
+            startActivity(intent);
+            finish();
+        }
+        loginActivitySign = this;
         super.onCreate(savedInstanceState);
         //隐藏手机状态栏
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
@@ -227,24 +242,35 @@ public class LoginActivity extends BaseActivity implements View.OnClickListener 
                 @Override
                 public void onFailure(Call call, IOException e) {
                     //异常情况
+                    LogUtil.d("LoginActivity", e.getMessage());
                 }
 
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     //接收服务端返回数据,并解析
-                    if (response.body().string().equals("0")) {
-                        //数据有误,提示用户
-                        loadingProgerss.setVisibility(View.GONE);
-                        //弹出窗口，提示用户
-                        showDialog("登陆失败", "账号或密码错误，请重新输入。");
+                    String res = response.body().string();
+                    if (res.equals("0")) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                //数据有误,提示用户
+                                loadingProgerss.setVisibility(View.GONE);
+                                //弹出窗口，提示用户
+                                showDialog("登陆失败", "账号或密码错误，请重新输入。");
+                            }
+                        });
+
                     } else {
                         //数据验证正确,则跳转到主页面，并将用户信息发送
-                        String jsonUser = response.body().string();
+                        String jsonUser = new String(res.getBytes(), "GBK");
+                        LogUtil.d("LoginActivity", jsonUser);
                         User user = GsonUtil.parseJsonWithGson(jsonUser);
                         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                         //发送数据user
                         intent.putExtra("user_data", user);
                         startActivity(intent);
+                        //保存用户信息sharedPreferences
+                        saveObject(MyApplication.getContext(), user);
                         finish();
                     }
                 }

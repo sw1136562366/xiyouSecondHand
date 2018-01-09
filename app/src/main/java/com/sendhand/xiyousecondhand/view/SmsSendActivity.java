@@ -17,6 +17,8 @@ import android.widget.TextView;
 
 import com.sendhand.xiyousecondhand.R;
 import com.sendhand.xiyousecondhand.entry.Constants;
+import com.sendhand.xiyousecondhand.entry.User;
+import com.sendhand.xiyousecondhand.util.GsonUtil;
 import com.sendhand.xiyousecondhand.util.HttpUtil;
 import com.sendhand.xiyousecondhand.util.LogUtil;
 import com.sendhand.xiyousecondhand.util.ToastUtil;
@@ -29,6 +31,8 @@ import okhttp3.Call;
 import okhttp3.FormBody;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+
+import static com.sendhand.xiyousecondhand.view.LoginActivity.loginActivitySign;
 
 /**
  * Mob 短信验证 测试demo
@@ -44,6 +48,8 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
     private boolean tvGetCodesClicked = false;
     //判断哪个活动的标志
     private String sign;
+    //验证手机号是否存在（volatile子线程同步变量）
+    private volatile Boolean isNotRegister = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -105,7 +111,7 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
      * @return
      */
     private boolean phoneIsRight() {
-        final Boolean[] isNotRegister = new Boolean[1];
+
         RequestBody requestBody = new FormBody.Builder()
             .add("phoneNumber", etPhone.getText().toString())
             .build();
@@ -118,12 +124,13 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
                 @Override
                 public void onResponse(Call call, Response response) throws IOException {
                     String getReturn = response.body().string();
+                    LogUtil.d("SmsSendActivity", "return:" + getReturn);
                     if (sign.equals("register")) {
                         if (getReturn.equals("1")) {
                             //手机号没注册，继续进行注册
-                            isNotRegister[0] = true;
+                            isNotRegister = true;
                         } else {
-                            isNotRegister[0] = false;
+                            isNotRegister = false;
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -134,9 +141,9 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
                     } else if (sign.equals("modifyPassword") || sign.equals("smsLogin")) {
                         if (getReturn.equals("0")) {
                             //手机号已注册，可以进行修改和登录
-                            isNotRegister[0] = true;
+                            isNotRegister = true;
                         } else {
-                            isNotRegister[0] = false;
+                            isNotRegister = false;
                             runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -148,7 +155,7 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
 
                 }
             });
-        return isNotRegister[0];
+        return isNotRegister;
     }
 
     private void initSMSSDK() {
@@ -217,12 +224,38 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
                         finish();
                     } else if (sign.equals("smsLogin")) {
                         //登录提示
-                        ladingProgressBar.setVisibility(View.VISIBLE);
-                        ladingSign.setVisibility(View.VISIBLE);
-                        progressbarBack.setVisibility(View.VISIBLE);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                ladingProgressBar.setVisibility(View.VISIBLE);
+                                ladingSign.setVisibility(View.VISIBLE);
+                                progressbarBack.setVisibility(View.VISIBLE);
+                            }
+                        });
                         //验证登录
                         //再次发送http请求，获取用户信息
+                        RequestBody requestBody = new FormBody.Builder()
+                                .add("phoneNumber", etPhone.getText().toString())
+                                .build();
+                        HttpUtil.postCallback(requestBody, Constants.VALIDATE_LOGIN_URL, new okhttp3.Callback() {
+                            @Override
+                            public void onFailure(Call call, IOException e) {
+                                LogUtil.d("SmsSendActivity", e.getMessage());
+                            }
 
+                            @Override
+                            public void onResponse(Call call, Response response) throws IOException {
+                                String jsonUser = response.body().string();
+                                LogUtil.d("SmsSendActivity", jsonUser);
+                                User user = GsonUtil.parseJsonWithGson(jsonUser);
+                                Intent intent = new Intent(SmsSendActivity.this, MainActivity.class);
+                                //发送数据user
+                                intent.putExtra("user_data", user);
+                                startActivity(intent);
+                            }
+                        });
+                        //关闭登录界面
+                        loginActivitySign.finish();
                         finish();
                     }
                     break;

@@ -1,4 +1,4 @@
-package com.sendhand.xiyousecondhand.view.fragment;
+package com.sendhand.xiyousecondhand.view.fragment.home;
 
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -11,11 +11,6 @@ import com.sendhand.xiyousecondhand.R;
 
 
 public class HomeFragment extends Fragment {
-
-    public HomeFragment() {
-        super();
-    }
-
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
