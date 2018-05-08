@@ -27,6 +27,13 @@
     <!-- 保持CPU 运转，屏幕和键盘灯有可能是关闭的,用于文件上传和下载 -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_GPS" />
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" />
+
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -35,15 +42,23 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
+        <meta-data android:name="com.baidu.lbsapi.API_KEY"
+            android:value="NGsIO9L1txCn5hyZgnss6DynhAhyLuFC" />
+
         <!-- 通过AndroidManifest配置AppKey和AppSecret，如果你选择通过代码配置，则不需要配置以下meta-data -->
         <meta-data
             android:name="Mob-AppKey"
             android:value="22d90f4524e60" />
+        <!-- 百度地图-->
         <meta-data
             android:name="Mob-AppSecret"
             android:value="b1f70cb9049e8a9ffa7bd995fb27a126" />
+        <service
+            android:name="com.baidu.location.f"
+            android:enabled="true"
+            android:process=":remote" />
 
-        <activity android:name=".view.fragment.home.main.ui.MainActivity"></activity>
+        <activity android:name=".view.fragment.home.main.ui.MainActivity" />
         <activity android:name=".view.LoginActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -91,7 +106,8 @@
                     android:scheme="rong" />
             </intent-filter>
         </activity>
-        <activity android:name=".view.MyPublishedActivity"></activity>
+        <activity android:name=".view.MyPublishedActivity" />
+        <activity android:name=".view.PublishActivity"></activity>
     </application>
 
 </manifest>

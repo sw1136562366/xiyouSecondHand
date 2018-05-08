@@ -12,7 +12,6 @@ import cn.bmob.v3.datatype.BmobGeoPoint;
  */
 
 public class Goods extends BmobObject implements Serializable {
-    private Integer goodId;
     private String title;
     private String desc;
     private Double price;
@@ -23,13 +22,6 @@ public class Goods extends BmobObject implements Serializable {
     private User user; //发布者
     private Integer status;
 
-    public Integer getGoodId() {
-        return goodId;
-    }
-
-    public void setGoodId(Integer goodId) {
-        this.goodId = goodId;
-    }
 
     public String getTitle() {
         return title;

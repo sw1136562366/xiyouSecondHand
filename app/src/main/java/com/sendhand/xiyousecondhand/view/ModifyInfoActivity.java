@@ -216,48 +216,37 @@ public class ModifyInfoActivity extends AppCompatActivity implements View.OnClic
 //            }
 //        });
 
-        BmobQuery<User> query = new BmobQuery<User>();
-        query.addWhereEqualTo("tel", user.getTel());
-        query.findObjects(new FindListener<User>() {
-            @Override
-            public void done(List<User> object, BmobException e) {
-                if (e == null) {
-                    String objectId = object.get(0).getObjectId();
-                    Method[]  methods = user.getClass().getMethods();
-                    for(int i = 0;i < methods.length; i++) {
-                        if (("set" + infoName).toLowerCase().equals(methods[i].getName().toLowerCase())) {
-                            try {
-                                methods[i].invoke(user, info);
-                            } catch (Exception e1) {
-                                e1.printStackTrace();
-                            }
-                        }
+        User newUser = new User();
+            Method[]  methods = newUser.getClass().getMethods();
+            for(int i = 0;i < methods.length; i++) {
+                if (("set" + infoName).toLowerCase().equals(methods[i].getName().toLowerCase())) {
+                    try {
+                        methods[i].invoke(newUser, info);
+                    } catch (Exception e1) {
+                        e1.printStackTrace();
                     }
-                    user.update(objectId, new UpdateListener() {
+                }
+            }
+        newUser.update(user.getObjectId(), new UpdateListener() {
 
+            @Override
+            public void done(BmobException e) {
+                if(e==null){
+                    //更新成功
+                    runOnUiThread(new Runnable() {
                         @Override
-                        public void done(BmobException e) {
-                            if(e==null){
-                                //更新成功
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        ToastUtil.showToast(ModifyInfoActivity.this, "保存成功");
-                                    }
-                                });
-                            }else{
-                                LogUtil.i("bmob","更新失败："+e.getMessage()+","+e.getErrorCode());
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        ToastUtil.showToast(ModifyInfoActivity.this, "保存失败");
-                                    }
-                                });
-                            }
+                        public void run() {
+                            ToastUtil.showToast(ModifyInfoActivity.this, "保存成功");
                         }
                     });
-                } else {
-                    LogUtil.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                }else{
+                    LogUtil.i("bmob","更新失败："+e.getMessage()+","+e.getErrorCode());
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            ToastUtil.showToast(ModifyInfoActivity.this, "保存失败");
+                        }
+                    });
                 }
             }
         });

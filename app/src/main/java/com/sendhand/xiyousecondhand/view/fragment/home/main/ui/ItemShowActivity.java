@@ -42,7 +42,7 @@ public class ItemShowActivity extends BaseActivity {
             public void onClick(View view) {
                 //TODO
                 if (RongIM.getInstance() != null) {
-                    RongIM.getInstance().startPrivateChat(MyApplication.getContext(), itemInfo.getTel(), itemInfo.getName());
+                    RongIM.getInstance().startPrivateChat(ItemShowActivity.this, itemInfo.getTel(), itemInfo.getName());
                 }
             }
         });

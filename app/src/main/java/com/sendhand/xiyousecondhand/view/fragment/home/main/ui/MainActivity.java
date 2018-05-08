@@ -1,8 +1,10 @@
 package com.sendhand.xiyousecondhand.view.fragment.home.main.ui;
 
+import android.Manifest;
 import android.annotation.TargetApi;
 import android.content.ContentUris;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,7 +13,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.widget.Toast;
 
@@ -22,6 +27,7 @@ import com.sendhand.xiyousecondhand.entry.User;
 import com.sendhand.xiyousecondhand.util.LogUtil;
 import com.sendhand.xiyousecondhand.util.ToastUtil;
 import com.sendhand.xiyousecondhand.view.BaseActivity;
+import com.sendhand.xiyousecondhand.view.PublishActivity;
 import com.sendhand.xiyousecondhand.view.fragment.PersonFragment;
 import com.sendhand.xiyousecondhand.view.fragment.home.main.model.IMainViewModel;
 import com.sendhand.xiyousecondhand.view.fragment.home.main.model.impl.MainViewModel;
@@ -88,45 +94,54 @@ public class MainActivity extends BaseActivity {
             mViewModel.setIndex(MainViewLayer.TAB_INDEX_MINE);
         } else if (v.getId() == R.id.plus) {
 //            ToastUtil.showToast(this, "发布");
-            insertGoods();
+            requestPermissions();
+
         }
     }
 
-
-    private void insertGoods() {
-        List<BmobObject> goods = new ArrayList<BmobObject>();
-        for (int i = 1; i < 11; i++) {
-            Goods good = new Goods();
-            good.setTitle("商品标题" + i);
-            good.setDesc("商品描述信息" + i);
-            good.setUser(user);
-            good.setPrice(Double.valueOf(100 + i));
-            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-            good.setPublishDate(new BmobDate(new Date()));
-            good.setPosition(new BmobGeoPoint(116.39727786183357, 39.913768382429105));
-            good.setStatus(1);
-            goods.add(good);
+    public void requestPermissions() {
+        List<String> permissionList = new ArrayList<>();
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.ACCESS_FINE_LOCATION);        }
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.READ_PHONE_STATE);
         }
-        new BmobBatch().insertBatch(goods).doBatch(new QueryListListener<BatchResult>() {
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        if (!permissionList.isEmpty()) {
+            String[] permissions = permissionList.toArray(new String[permissionList.size()]);
+            ActivityCompat.requestPermissions(MainActivity.this, permissions, 1);
+        } else {
+            Intent intent = new Intent(this, PublishActivity.class);
+            intent.putExtra("user_data", user);
+            startActivity(intent);
+        }
+    }
 
-            @Override
-            public void done(List<BatchResult> o, BmobException e) {
-                if(e==null){
-                    for(int i = 0; i < o.size(); i++){
-                        BatchResult result = o.get(i);
-                        BmobException ex =result.getError();
-                        if(ex==null){
-                            LogUtil.d("MainActivity", "第"+i+"个数据批量添加成功：");
-                        }else{
-                            LogUtil.d("MainActivity", "第"+i+"个数据批量添加失败：");
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case 1:
+                if (grantResults.length > 0) {
+                    for (int result : grantResults) {
+                        if (result != PackageManager.PERMISSION_GRANTED) {
+                            Toast.makeText(this, "必须允许所有权限才能使用该程序", Toast.LENGTH_SHORT).show();
+                            finish();
+                            return;
                         }
                     }
-                    ToastUtil.showToast(MyApplication.getContext(), "添加成功");
-                }else{
-                    LogUtil.d("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                    Intent intent = new Intent(this, PublishActivity.class);
+                    intent.putExtra("user_data", user);
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(this, "发生未知错误", Toast.LENGTH_SHORT).show();
+                    finish();
                 }
-            }
-        });
+                break;
+            default:
+                break;
+        }
     }
 
     @Override

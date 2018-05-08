@@ -141,7 +141,7 @@ public class HomeViewLayer extends DataBindingViewLayer<FragmentHomeBinding, IHo
                 HomeListEntity itemInfo = mAdapter.getItem(position);
                 Intent intent = new Intent(MyApplication.getContext(), ItemShowActivity.class);
                 intent.putExtra("itemInfo", itemInfo);
-                MyApplication.getContext().startActivity(intent);
+                mContainer.startActivity(intent);
             }
         });
 

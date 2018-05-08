@@ -10,6 +10,9 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        ndk {
+            abiFilters 'armeabi', 'armeabi-v7a', 'arm64-v8a', 'x86', /*'x86_64',*/ 'mips', 'mips64'
+        }
     }
 
     dataBinding {
@@ -30,8 +33,14 @@ android {
         }
     }
 
+    configurations{
+        all*.exclude group: 'com.squareup.okio'
+    }
+
     packagingOptions {
         exclude 'META-INF/rxjava.properties'
+        exclude 'META-INF/maven/com.squareup.okio/okio/pom.xml'
+        exclude 'META-INF/maven/com.squareup.okio/okio/pom.properties'
     }
 }
 
@@ -54,7 +63,9 @@ dependencies {
     compile name: 'SMSSDKGUI-3.0.0', ext: 'aar'
     compile 'com.android.support:appcompat-v7:27.0.0'
     compile 'org.litepal.android:core:1.4.1'
-    compile 'com.squareup.okhttp3:okhttp:3.3.1'
+    compile ('com.squareup.okhttp3:okhttp:3.0.0', {
+        exclude group: "com.squareup.okio"
+    })
     compile 'com.google.code.gson:gson:2.7'
     compile 'com.github.bumptech.glide:glide:3.7.0'
     compile 'com.android.support:design:27.0.0'
@@ -66,7 +77,8 @@ dependencies {
     compile 'com.facebook.fresco:fresco:0.14.1'
     compile 'com.facebook.fresco:imagepipeline-okhttp3:0.14.1'
     //Retrofit(网络请求框架)
-    compile 'com.squareup.retrofit2:retrofit:2.1.0'
+
+
     //RxJava(异步处理框架)
     compile 'io.reactivex.rxjava2:rxjava:2.0.1'
     compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
@@ -78,6 +90,6 @@ dependencies {
     }
     //融云IM
     compile project(':IMKit')
-
-
+    implementation files('libs/BaiduLBS_Android.jar')
+    compile 'com.android.support:multidex:1.0.1'
 }

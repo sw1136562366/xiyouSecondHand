@@ -26,6 +26,7 @@ public class MyApplication extends Application {
 
     @Override
     public void onCreate() {
+        super.onCreate();
         context = getApplicationContext();
         LitePal.initialize(context);
         MobSDK.init(context);
@@ -38,6 +39,7 @@ public class MyApplication extends Application {
         Fresco.initialize(this, imagePipelineConfig);
         RongIM.init(this);
         Bmob.initialize(this, "42a8614c8b2a17cd5e60c7931ef4f58f");
+//        SDKInitializer.initialize(getApplicationContext());
     }
 
     public static Context getContext() {
