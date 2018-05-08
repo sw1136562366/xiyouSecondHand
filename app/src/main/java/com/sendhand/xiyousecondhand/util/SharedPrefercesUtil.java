@@ -17,8 +17,10 @@ import java.io.StreamCorruptedException;
 
 public class SharedPrefercesUtil {
     private final static String FILENAME = "login_user_data";
-
     private final static String KEY = "user_data";
+
+    private final static String RY_TOKEN_FILENAME = "user_ry_token";
+
 
     /**
      * desc:保存对象
@@ -45,6 +47,29 @@ public class SharedPrefercesUtil {
             LogUtil.e("", "保存obj失败");
         }
     }
+
+    /**
+     * 保存用户融云token
+     * @param context
+     * @param obj
+     */
+    public static void saveRYToken(Context context, String key, String token){
+            // 保存对象
+        SharedPreferences.Editor sharedata = context.getSharedPreferences(RY_TOKEN_FILENAME, Context.MODE_PRIVATE).edit();
+        sharedata.putString(key, token);
+        sharedata.commit();
+    }
+
+    public static String getTokenFromSP(Context context, String key) {
+        SharedPreferences sharedata = context.getSharedPreferences(RY_TOKEN_FILENAME, Context.MODE_PRIVATE);
+        String token = null;
+        if (sharedata.contains(key)) {
+            token = sharedata.getString(key, "");
+        }
+
+        return token;
+    }
+
     /**
      * desc:将数组转为16进制
      * @param bArray

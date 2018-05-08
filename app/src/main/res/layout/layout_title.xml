@@ -16,7 +16,7 @@
         android:layout_marginLeft="15dip"
         android:background="@mipmap/btn_back1"
         android:textColor="@color/white"
-        android:visibility="gone"
+        android:visibility="visible"
         android:onClick="true"/>
     <!-- 左边文本 -->
 
@@ -36,7 +36,8 @@
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
         android:textColor="@color/black"
-        android:textSize="15sp" />
+        android:textSize="15sp"
+        />
     <!-- 中间Logo -->
 
     <ImageView
@@ -71,6 +72,7 @@
         android:layout_marginRight="5dip"
         android:textColor="@color/white"
         android:textSize="14sp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        />
 
 </RelativeLayout>

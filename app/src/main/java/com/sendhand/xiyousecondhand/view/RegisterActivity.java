@@ -8,6 +8,7 @@ import android.text.InputFilter;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,14 +17,21 @@ import android.widget.TextView;
 
 import com.sendhand.xiyousecondhand.R;
 import com.sendhand.xiyousecondhand.entry.Constants;
+import com.sendhand.xiyousecondhand.entry.User;
 import com.sendhand.xiyousecondhand.util.HttpUtil;
 import com.sendhand.xiyousecondhand.util.LogUtil;
 import com.sendhand.xiyousecondhand.util.MD5Util;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
+import cn.bmob.v3.listener.QueryListener;
+import cn.bmob.v3.listener.SaveListener;
 import okhttp3.Call;
 import okhttp3.FormBody;
 import okhttp3.MediaType;
@@ -106,47 +114,77 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
                 LogUtil.d("RegisterActivity", password);
                 //密码加密
                 password = MD5Util.md5(password);
-                //验证手机号
-//                if (validatePhone()) {
-                    //向服务端发送数据
-                    RequestBody requestBody = new FormBody.Builder()
-                            .add("phoneNumber", phoneNumber)
-                            .add("userName", userName)
-                            .add("password", password)
-                            .build();
-                    HttpUtil.postCallback(requestBody, Constants.REGISTER_URL, new okhttp3.Callback() {
-                        @Override
-                        public void onFailure(Call call, IOException e) {
-                            //异常情况
-                            LogUtil.d("RegisterActivity", e.getMessage());
-                        }
 
-                        @Override
-                        public void onResponse(Call call, Response response) throws IOException {
-                            if (response.isSuccessful()) {
-                                String returnGet = response.body().string();
-                                LogUtil.d("RegisterActivity", "return:" + returnGet);
-                                if (returnGet.equals("1") || returnGet == "1") {
-                                    //注册成功，跳转到登录
-                                    Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-                                    intent.putExtra("phoneNumber", phoneNumber);
-                                    startActivity(intent);
-                                    finish();
-                                } else {
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            //打印错误信息
-                                            ladingProgressBar.setVisibility(View.GONE);
-                                            ladingSign.setVisibility(View.GONE);
-                                            progressbarBack.setVisibility(View.GONE);
-                                        }
-                                    });
+                //bmob插入数据
+                //注意：不能调用gameScore.setObjectId("")方法
+                User user = new User();
+                user.setTel(phoneNumber);
+                user.setUsername(userName);
+                user.setPassword(password);
+                user.save(new SaveListener<String>() {
+
+                    @Override
+                    public void done(String objectId, BmobException e) {
+                        if(e==null){
+                            //注册成功，跳转到登录
+                            Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                            intent.putExtra("phoneNumber", phoneNumber);
+                            startActivity(intent);
+                            finish();
+                        }else{
+                            LogUtil.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    //打印错误信息
+                                    ladingProgressBar.setVisibility(View.GONE);
+                                    ladingSign.setVisibility(View.GONE);
+                                    progressbarBack.setVisibility(View.GONE);
                                 }
-                            }
+                            });
                         }
-                    });
-//                }
+                    }
+                });
+
+                //验证手机号
+//                    //向服务端发送数据
+//                RequestBody requestBody = new FormBody.Builder()
+//                        .add("phoneNumber", phoneNumber)
+//                        .add("userName", userName)
+//                        .add("password", password)
+//                        .build();
+//                HttpUtil.postCallback(requestBody, Constants.REGISTER_URL, new okhttp3.Callback() {
+//                    @Override
+//                    public void onFailure(Call call, IOException e) {
+//                        //异常情况
+//                        LogUtil.d("RegisterActivity", e.getMessage());
+//                    }
+//
+//                    @Override
+//                    public void onResponse(Call call, Response response) throws IOException {
+//                        if (response.isSuccessful()) {
+//                            String returnGet = response.body().string();
+//                            LogUtil.d("RegisterActivity", "return:" + returnGet);
+//                            if (returnGet.equals("1") || returnGet == "1") {
+//                                //注册成功，跳转到登录
+//                                Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+//                                intent.putExtra("phoneNumber", phoneNumber);
+//                                startActivity(intent);
+//                                finish();
+//                            } else {
+//                                runOnUiThread(new Runnable() {
+//                                    @Override
+//                                    public void run() {
+//                                        //打印错误信息
+//                                        ladingProgressBar.setVisibility(View.GONE);
+//                                        ladingSign.setVisibility(View.GONE);
+//                                        progressbarBack.setVisibility(View.GONE);
+//                                    }
+//                                });
+//                            }
+//                        }
+//                    }
+//                });
                 break;
             default:
                 break;
@@ -159,27 +197,27 @@ public class RegisterActivity extends BaseActivity implements View.OnClickListen
      */
     public static boolean validatePhone() {
         final boolean[] bool = new boolean[1];
-        //向服务端发送数据
-        RequestBody requestBody = new FormBody.Builder()
-                .add("phoneNumber", phoneNumber)
-                .build();
-        HttpUtil.postCallback(requestBody, Constants.VALIDATE_PHONE_URL, new okhttp3.Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                //异常情况
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                String returnGet = response.body().toString();
-                if (returnGet.equals("1")) {
-                   //正确
-                    bool[0] = true;
-                } else {
-                    bool[0] = false;
-                }
-            }
-        });
+//        //向服务端发送数据
+//        RequestBody requestBody = new FormBody.Builder()
+//                .add("phoneNumber", phoneNumber)
+//                .build();
+//        HttpUtil.postCallback(requestBody, Constants.VALIDATE_PHONE_URL, new okhttp3.Callback() {
+//            @Override
+//            public void onFailure(Call call, IOException e) {
+//                //异常情况
+//            }
+//
+//            @Override
+//            public void onResponse(Call call, Response response) throws IOException {
+//                String returnGet = response.body().toString();
+//                if (returnGet.equals("1")) {
+//                   //正确
+//                    bool[0] = true;
+//                } else {
+//                    bool[0] = false;
+//                }
+//            }
+//        });
         return bool[0];
     }
 

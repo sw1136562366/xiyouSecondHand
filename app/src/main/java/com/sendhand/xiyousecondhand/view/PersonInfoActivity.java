@@ -1,5 +1,6 @@
 package com.sendhand.xiyousecondhand.view;
 
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -16,21 +17,48 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.sendhand.xiyousecondhand.R;
+import com.sendhand.xiyousecondhand.entry.Constants;
 import com.sendhand.xiyousecondhand.entry.User;
+import com.sendhand.xiyousecondhand.util.HttpUtil;
+import com.sendhand.xiyousecondhand.util.LogUtil;
+import com.sendhand.xiyousecondhand.util.ToastUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
+import cn.bmob.v3.listener.UpdateListener;
+import okhttp3.Call;
+import okhttp3.FormBody;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+import static com.sendhand.xiyousecondhand.util.SharedPrefercesUtil.clearData;
+import static com.sendhand.xiyousecondhand.util.SharedPrefercesUtil.saveObject;
 
 public class PersonInfoActivity extends BaseActivity implements View.OnClickListener{
 
     private User user;
     private TextView tvSex;
+    private TextView tvUserName;
+    private TextView tvPostwd;
+    private TextView tvAge;
+    private TextView tvAddress;
+    private  TextView tvSchool;
+    private TextView tvEmail;
+    public static PersonInfoActivity personInfoSign;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_person_info);
-        user = (User) getIntent().getSerializableExtra("user_data");
+        personInfoSign = this;
+        if (getIntent() != null) {
+            user = (User) getIntent().getSerializableExtra("user_data");
+        }
         initView();
 
     }
@@ -52,17 +80,24 @@ public class PersonInfoActivity extends BaseActivity implements View.OnClickList
         TextView tvSchool = (TextView) findViewById(R.id.tvSchool);
         TextView tvEmail = (TextView) findViewById(R.id.tvEmail);
         tvUserName.setText(user.getUsername());
-        tvAge.setText(user.getAge() + "");
+
+        if (user.getAge() != null) {
+            tvAge.setText(user.getAge() + "");
+        }
+
         tvPostwd.setText(user.getPostwd());
-        tvSex.setText(user.getSex());
-        if (user.getSchool().length() > 10) {
+        if (user.getSex() != null) {
+            tvSex.setText(user.getSex().equals("0") ? "男" : "女");
+        }
+
+        if (user.getSchool() != null && user.getSchool().length() > 10) {
             tvSchool.setText(user.getSchool().substring(0, 10) + "...");
         } else {
             tvSchool.setText(user.getSchool());
         }
 
         tvEmail.setText(user.getEmail());
-        if (user.getAddress().length() > 10) {
+        if (user.getAddress() != null && user.getAddress().length() > 10) {
             tvAddress.setText(user.getAddress().substring(0, 10) + "...");
         } else {
             tvAddress.setText(user.getAddress());
@@ -84,7 +119,18 @@ public class PersonInfoActivity extends BaseActivity implements View.OnClickList
         rlPostwd.setOnClickListener(this);
     }
 
-
+    /**
+     * user传递给上一个活动
+     */
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent();
+        intent.putExtra("user_data", user);
+//        intent.putExtra("text", "测试啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊");
+//        LogUtil.d("PersonInfoActivity", user.getSchool());
+        setResult(RESULT_OK, intent);
+        finish();
+    }
 
     @Override
     public void onClick(View view) {
@@ -96,7 +142,8 @@ public class PersonInfoActivity extends BaseActivity implements View.OnClickList
                 Intent userNameIntent = new Intent(PersonInfoActivity.this, ModifyInfoActivity.class);
                 userNameIntent.putExtra("what_info", "userName");
                 userNameIntent.putExtra("user_data", user);
-                startActivity(userNameIntent);
+                startActivityForResult(userNameIntent, 2);
+//                startActivity(userNameIntent);
                 break;
             case R.id.rlSex:
                 //对话框
@@ -106,34 +153,54 @@ public class PersonInfoActivity extends BaseActivity implements View.OnClickList
                 Intent ageIntent = new Intent(PersonInfoActivity.this, ModifyInfoActivity.class);
                 ageIntent.putExtra("what_info", "age");
                 ageIntent.putExtra("user_data", user);
-                startActivity(ageIntent);
+                startActivityForResult(ageIntent, 2);
+//                startActivity(ageIntent);
                 break;
+
             case R.id.rlSchool:
                 Intent schoolIntent = new Intent(PersonInfoActivity.this, ModifyInfoActivity.class);
                 schoolIntent.putExtra("what_info", "school");
                 schoolIntent.putExtra("user_data", user);
-                startActivity(schoolIntent);
+                startActivityForResult(schoolIntent, 2);
+//                startActivity(schoolIntent);
                 break;
             case R.id.rlEmail:
                 Intent emailIntent = new Intent(PersonInfoActivity.this, ModifyInfoActivity.class);
                 emailIntent.putExtra("what_info", "email");
                 emailIntent.putExtra("user_data", user);
-                startActivity(emailIntent);
+                startActivityForResult(emailIntent, 2);
+//                startActivity(emailIntent);
                 break;
             case R.id.rlAdderes:
                 Intent addressIntent = new Intent(PersonInfoActivity.this, ModifyInfoActivity.class);
                 addressIntent.putExtra("what_info", "address");
                 addressIntent.putExtra("user_data", user);
-                startActivity(addressIntent);
+                startActivityForResult(addressIntent, 2);
+//                startActivity(addressIntent);
                 break;
             case R.id.rlPostwd:
                 Intent postwdIntent = new Intent(PersonInfoActivity.this, ModifyInfoActivity.class);
                 postwdIntent.putExtra("what_info", "postwd");
                 postwdIntent.putExtra("user_data", user);
-                startActivity(postwdIntent);
+                startActivityForResult(postwdIntent, 2);
+//                startActivity(postwdIntent);
                 break;
             default:
                 break;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        switch (requestCode) {
+            case 2:
+                if (resultCode == RESULT_OK) {
+                    user = (User) data.getSerializableExtra("user_data");
+                    LogUtil.d("PersonInfoActivity", "info:" + user.getUsername());
+                    initView();
+                }
+                break;
+            default:
         }
     }
 
@@ -152,21 +219,100 @@ public class PersonInfoActivity extends BaseActivity implements View.OnClickList
                     case 0: //男
                         if (!tvSex.getText().equals("男")) {
                             tvSex.setText("男");
-                            //保存数据库，网络请求
-
-
+                            modifySex("男");
                         }
                         break;
                     case 1: // 女
                         if (!tvSex.getText().equals("女")) {
                             tvSex.setText("女");
-
-
+                            modifySex("女");
                         }
                         break;
                 }
             }
+
+            private void modifySex(final String sex) {
+                //保存数据库，网络请求
+//                RequestBody requestBody = new FormBody.Builder()
+//                        .add("phoneNumber", user.getTel())
+//                        .add("sex", sex.equals("男") ? "0" : "1")
+//                        .build();
+//                HttpUtil.postCallback(requestBody, Constants.MODIFY_SEX_URL, new okhttp3.Callback() {
+//                    @Override
+//                    public void onFailure(Call call, IOException e) {
+//                        LogUtil.d("PersonInfoActivity", e.getMessage());
+//                    }
+//
+//                    @Override
+//                    public void onResponse(Call call, Response response) throws IOException {
+//                        String getReturn = response.body().string();
+//                        LogUtil.d("PersonInfoActivity", getReturn);
+//                        if (getReturn.equals("1")) {
+//                            runOnUiThread(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    ToastUtil.showToast(PersonInfoActivity.this, "保存成功");
+//                                }
+//                            });
+//                        } else {
+//                            runOnUiThread(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    ToastUtil.showToast(PersonInfoActivity.this, "保存失败");
+//                                }
+//                            });
+//                        }
+//                    }
+//                });
+                BmobQuery<User> query = new BmobQuery<User>();
+                query.addWhereEqualTo("tel", user.getTel());
+                query.findObjects(new FindListener<User>() {
+                    @Override
+                    public void done(List<User> object, BmobException e) {
+                        if (e == null) {
+                            String objectId = object.get(0).getObjectId();
+                            user.setSex(sex.equals("男") ? "0" : "1");
+                            user.update(objectId, new UpdateListener() {
+
+                                @Override
+                                public void done(BmobException e) {
+                                    if(e==null){
+                                        //更新成功
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                ToastUtil.showToast(PersonInfoActivity.this, "保存成功");
+                                            }
+                                        });
+                                    }else{
+                                        LogUtil.i("bmob","更新失败："+e.getMessage()+","+e.getErrorCode());
+                                        runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                ToastUtil.showToast(PersonInfoActivity.this, "保存失败");
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        } else {
+                            LogUtil.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                        }
+                    }
+                });
+
+
+                if (sex.equals("男")) {
+                    user.setSex("0");
+                } else {
+                    user.setSex("1");
+                }
+                //修改sharedpreferences中的信息
+                clearData(PersonInfoActivity.this);
+                saveObject(PersonInfoActivity.this, user);
+            }
         });
         builder.create().show();
     }
+
 }

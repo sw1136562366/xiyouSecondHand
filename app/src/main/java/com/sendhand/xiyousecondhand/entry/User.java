@@ -5,28 +5,40 @@ import android.os.Parcelable;
 
 import java.io.Serializable;
 
+import cn.bmob.v3.BmobObject;
+import cn.bmob.v3.datatype.BmobFile;
+
 /**
  * 用户属性
  * Created by Administrator on 2017/12/8 0008.
  */
 
-public class User implements Serializable {
-    private int id;
+public class User extends BmobObject implements Serializable {
+    private Integer id;
     private String tel;
+    private String password;
     private String username;
     private String school;
     private String sex;
-    private int age;
+    private Integer age;
     private String postwd;
     private String address;
-    private String pic;
+    private BmobFile pic;
     private String email;
 
-    public int getId() {
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
     public String getTel() {
@@ -61,11 +73,11 @@ public class User implements Serializable {
         this.sex = sex;
     }
 
-    public int getAge() {
+    public Integer getAge() {
         return age;
     }
 
-    public void setAge(int age) {
+    public void setAge(Integer age) {
         this.age = age;
     }
 
@@ -85,11 +97,11 @@ public class User implements Serializable {
         this.address = address;
     }
 
-    public String getPic() {
+    public BmobFile getPic() {
         return pic;
     }
 
-    public void setPic(String pic) {
+    public void setPic(BmobFile pic) {
         this.pic = pic;
     }
 
@@ -101,7 +113,12 @@ public class User implements Serializable {
         this.email = email;
     }
 
-//    @Override
+    @Override
+    public String toString() {
+        return super.toString();
+    }
+
+    //    @Override
 //    public int describeContents() {
 //        return 0;
 //    }

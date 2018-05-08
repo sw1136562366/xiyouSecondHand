@@ -8,11 +8,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,18 +35,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.sendhand.xiyousecondhand.R;
-import com.sendhand.xiyousecondhand.application.MyApplication;
-import com.sendhand.xiyousecondhand.entry.Constants;
+import com.sendhand.xiyousecondhand.MyApplication;
 import com.sendhand.xiyousecondhand.entry.User;
-import com.sendhand.xiyousecondhand.util.BitmapBlurUtil;
 import com.sendhand.xiyousecondhand.util.HttpUtil;
 import com.sendhand.xiyousecondhand.util.LogUtil;
 import com.sendhand.xiyousecondhand.util.ToastUtil;
 import com.sendhand.xiyousecondhand.view.LoginActivity;
-import com.sendhand.xiyousecondhand.view.MainActivity;
-import com.sendhand.xiyousecondhand.view.ModifyPwdActivity;
+import com.sendhand.xiyousecondhand.view.MyPublishedActivity;
 import com.sendhand.xiyousecondhand.view.PersonInfoActivity;
 import com.sendhand.xiyousecondhand.view.SmsSendActivity;
+import com.sendhand.xiyousecondhand.view.fragment.home.main.ui.MainActivity;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -57,16 +53,18 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.datatype.BmobFile;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
+import cn.bmob.v3.listener.UpdateListener;
+import cn.bmob.v3.listener.UploadFileListener;
+import io.rong.imkit.RongIM;
+import io.rong.imlib.model.UserInfo;
 import okhttp3.Call;
-import okhttp3.FormBody;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import okhttp3.Response;
 
 import static android.app.Activity.RESULT_OK;
@@ -79,10 +77,11 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
     private User user;
     private String text;
     private TextView tvUserName;
-    protected static final int CHOOSE_PICTURE = 0;
-    protected static final int TAKE_PICTURE = 1;
-    private static final int CROP_SMALL_PICTURE = 2;
-    protected static Uri imageUri;
+    protected static final int CHOOSE_PICTURE = 1;
+    protected static final int TAKE_PICTURE = 2;
+    private static Uri imageUri;
+    //拍照输出文件
+    private File outputImage;
     //显示头像
     private  Handler handler = new Handler(){
         public void handleMessage(Message msg) {
@@ -91,6 +90,11 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
             profile_image.setImageBitmap(bitmap);
         }
     };
+
+    public static PersonFragment newInstance() {
+        PersonFragment fragment = new PersonFragment();
+        return fragment;
+    }
 
     public PersonFragment() {
         super();
@@ -111,12 +115,12 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
          * 读取头像
          * 先从sharedpreferences读取，未读到再从本地读取，未读到再从服务器读取
          */
-        if (!getBitmapFromSharedPreferences()) {
-//            if (!readImage()) {
+//        if (!getBitmapFromSharedPreferences()) {
+            if (!readImage()) {
                 //网络请求后台图片流
-                //getImageFromServer(Constants.GET_IMAGE_BASEURL + "     ");
-//            }
-        }
+                getImageFromServer();
+            }
+//        }
 
         return view;
     }
@@ -125,8 +129,11 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
         //设置标题
 //        TextView titleText = view.findViewById(R.id.tvTopTitleCenter);
 //        titleText.setText("我的");
-        TextView tvUserName = view.findViewById(R.id.tvUserName);
-        tvUserName.setText(user.getUsername());
+        tvUserName = view.findViewById(R.id.tvUserName);
+        if (user != null) {
+            tvUserName.setText(user.getUsername());
+        }
+
         pull_img = view.findViewById(R.id.pull_img);
         profile_image = view.findViewById(R.id.profile_image);
         TextView tvEditUserInfo = view.findViewById(R.id.tvEditUserInfo);
@@ -143,6 +150,8 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
         profile_image.setOnClickListener(this);
     }
 
+
+
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
@@ -151,7 +160,14 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        user = ((MainActivity) context).user;
+        user = ((MainActivity ) context).user;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        user = ((MainActivity) getActivity()).user;
+        tvUserName.setText(user.getUsername());
     }
 
     @Override
@@ -165,7 +181,7 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
             case R.id.tvEditUserInfo:
                 Intent editInfoIntent = new Intent(getActivity(), PersonInfoActivity.class);
                 editInfoIntent.putExtra("user_data",user);
-                startActivity(editInfoIntent);
+                getActivity().startActivityForResult(editInfoIntent, 3);
                 break;
             //修改密码
             case R.id.tvModifyPwd:
@@ -175,7 +191,8 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
                 break;
             //我发布的
             case R.id.tvPublished:
-
+                Intent intent1 = new Intent(getActivity(), MyPublishedActivity.class);
+                startActivity(intent1);
                 break;
             //我求购的
             case R.id.tvWillBuy:
@@ -190,27 +207,46 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
         }
     }
 
+
+
     /**
      * 从服务器请求图片
-     * @param imageUrl
      */
-    private void getImageFromServer(String imageUrl) {
-        HttpUtil.getCallback(imageUrl, new okhttp3.Callback() {
+    private void getImageFromServer() {
+        BmobQuery<User> query = new BmobQuery<User>();
+        query.addWhereEqualTo("tel", user.getTel());
+        query.findObjects(new FindListener<User>() {
             @Override
-            public void onFailure(Call call, IOException e) {
-                LogUtil.d("PersonFragement", e.getMessage());
-            }
+            public void done(List<User> object, BmobException e) {
+                if (e == null) {
+                    if (object.size() > 0) {
+                        if (object.get(0).getPic() != null) {
+                            String picUrl = object.get(0).getPic().getFileUrl();
+                            //根据图片url加载图片
+                            HttpUtil.getCallback(picUrl, new okhttp3.Callback() {
+                                @Override
+                                public void onFailure(Call call, IOException e) {
+                                    LogUtil.d("PersonFragment", e.getMessage());
+                                }
 
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                //得到图片的流
-                InputStream inputStream = response.body().byteStream();
-                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-                Message message = new Message();
-                message.obj = bitmap;
-                handler.sendMessage(message);
+                                @Override
+                                public void onResponse(Call call, Response response) throws IOException {
+                                    //得到图片的流
+                                    InputStream inputStream = response.body().byteStream();
+                                    Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                                    Message message = new Message();
+                                    message.obj = bitmap;
+                                    handler.sendMessage(message);
+                                }
+                            });
+                        }
+                    }
+                } else {
+                    LogUtil.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                }
             }
         });
+
     }
 
     /**
@@ -226,14 +262,14 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 switch (which) {
-                    case CHOOSE_PICTURE: // 选择本地照片
+                    case 0: // 选择本地照片
                         Intent openAlbumIntent = new Intent(
                                 Intent.ACTION_GET_CONTENT);
                         openAlbumIntent.setType("image/*");
                         startActivityForResult(openAlbumIntent, CHOOSE_PICTURE);
                         break;
-                    case TAKE_PICTURE: // 拍照
-                        File outputImage = new File(getActivity().getExternalCacheDir(), "output_image.jpg");
+                    case 1: // 拍照
+                        outputImage = new File(getActivity().getExternalCacheDir(), "output_image.jpg");
                         try {
                             if (outputImage .exists()) {
                                 outputImage.delete();
@@ -244,7 +280,7 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
                         }
 
                         if (Build.VERSION.SDK_INT >= 24) {
-                            imageUri = FileProvider.getUriForFile(getActivity(), "com.secondhand.xiyousecondhand.fileprovider", outputImage);
+                            imageUri = FileProvider.getUriForFile(getActivity(), "com.sendhand.xiyousecondhand.fileprovider", outputImage);
                         } else {
                             imageUri = Uri.fromFile(outputImage);
                         }
@@ -258,28 +294,14 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
         builder.create().show();
     }
 
-
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        LogUtil.d("Main", "选择选择选择选择选择选择选择");
         switch (requestCode) {
-            case TAKE_PICTURE:
-                if (resultCode == RESULT_OK) {
-                    try {
-                        Bitmap bitmap = BitmapFactory.decodeStream(getActivity().getContentResolver().openInputStream(imageUri));
-                        pull_img.setImageBitmap(bitmap);
-                        profile_image.setImageBitmap(bitmap);
-                        //图片缓存到本地
-//                        saveImage(bitmap);
-                        //图片上传到服务器,并且缓存
-                        saveBitmapToSharedPreferences(bitmap);
-
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                }
-                break;
             case CHOOSE_PICTURE:
                 if (resultCode == RESULT_OK) {
+
                     if (Build.VERSION.SDK_INT >= 19) {
                         //4.4以上
                         handleImageOnKitKat(data);
@@ -287,16 +309,144 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
                         handleImageBeforeKitKat(data);
                     }
                 }
+                break;
+            case TAKE_PICTURE:
+                if (resultCode == RESULT_OK) {
+                    try {
+                        Bitmap bitmap = BitmapFactory.decodeStream(getActivity().getContentResolver().openInputStream(imageUri));
+                        pull_img.setImageBitmap(bitmap);
+                        profile_image.setImageBitmap(bitmap);
+                        //图片缓存到本地
+                        saveImage(bitmap);
+                        //图片上传到服务器
+//                        saveBitmapToSharedPreferences(bitmap);
+                        uploadPic(outputImage);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                break;
+            case 3:
+                LogUtil.d("PersonFragment", "*************");
+                if (resultCode == RESULT_OK) {
+                    user = (User) data.getSerializableExtra("user_data");
+                    LogUtil.d("PersonFragment", user.getSchool());
+//                    String text = data.getStringExtra("text");
+//                    LogUtil.d("PersonFragment", text);
+                }
+                break;
             default:
                 break;
         }
     }
 
     /**
+     * 上传头像
+     * @param picFile
+     */
+    private void uploadPic(File picFile) {
+//        String picPath = "sdcard/temp.jpg";
+        final BmobFile bmobFile = new BmobFile(picFile);
+        bmobFile.uploadblock(new UploadFileListener() {
+
+            @Override
+            public void done(BmobException e) {
+                if(e==null){
+                    //bmobFile.getFileUrl()--返回的上传文件的完整地址
+
+                    //头像0文件保存到Bmob
+                    BmobQuery<User> query = new BmobQuery<User>();
+                    query.addWhereEqualTo("tel", user.getTel());
+                    query.findObjects(new FindListener<User>() {
+                        @Override
+                        public void done(List<User> object, BmobException e) {
+                            if (e == null) {
+                                String objectId = object.get(0).getObjectId();
+                                user.setPic(bmobFile);
+                                user.update(objectId, new UpdateListener() {
+
+                                    @Override
+                                    public void done(BmobException e) {
+                                        if(e==null){
+                                            //更新成功
+                                            ToastUtil.showToast(getActivity(), "上传头像成功");
+                                        }else{
+                                            LogUtil.i("bmob","更新失败："+e.getMessage()+","+e.getErrorCode());
+                                        }
+                                    }
+                                });
+                            } else {
+                                LogUtil.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                            }
+                        }
+                    });
+
+                    //刷新融云缓存中的用户信息
+                    if (RongIM.getInstance() != null) {
+                        RongIM.getInstance().refreshUserInfoCache(new UserInfo(user.getTel(), user.getUsername(), Uri.parse(bmobFile.getFileUrl())));
+                    }
+
+                }else{
+                    ToastUtil.showToast(getActivity(), "上传头像失败");
+                    LogUtil.d("bmob", e.getMessage() + e.getErrorCode());
+                }
+
+            }
+
+            @Override
+            public void onProgress(Integer value) {
+                // 返回的上传进度（百分比）
+            }
+        });
+//        Map<String, String> map = new HashMap<String, String>();
+//        map.put("phoneNumber", user.getTel());
+//        HttpUtil.post_file(Constants.UPLOAD_IMAGE_URL, map, pic, new okhttp3.Callback() {
+//            @Override
+//            public void onFailure(Call call, IOException e) {
+//                LogUtil.d("PersonFragment", e.getMessage());
+//            }
+//
+//            @Override
+//            public void onResponse(Call call, Response response) throws IOException {
+//                LogUtil.d("PersonFragment", "*****************");
+//                if (response.isSuccessful()) {
+//                    String getReturn = response.body().string();
+//                    LogUtil.d("PersonFragment", getReturn);
+//                    if (getReturn.equals("1")) {
+//                        getActivity().runOnUiThread(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                ToastUtil.showToast(getActivity(), "上传成功");
+//
+//
+//                                //TODO
+//
+//
+//                                //刷新融云缓存中的用户信息
+//                                if (RongIM.getInstance() != null) {
+//                                    RongIM.getInstance().refreshUserInfoCache(new UserInfo("userId", "啊明", Uri.parse("http://rongcloud-web.qiniudn.com/docs_demo_rongcloud_logo.png")));
+//                                }
+//
+//                            }
+//                        });
+//                    } else {
+//                        getActivity().runOnUiThread(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                ToastUtil.showToast(getActivity(), "上传失败");
+//                            }
+//                        });
+//                    }
+//                }
+//            }
+//        });
+    }
+
+    /**
      * 4.4以下处理图片方法
      * @param data
      */
-    private void handleImageBeforeKitKat(Intent data) {
+    public void handleImageBeforeKitKat(Intent data) {
         Uri uri = data.getData();
         String imagePath = getImagePath(uri, null);
         displayImage(imagePath);
@@ -307,7 +457,7 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
      * @param data
      */
     @TargetApi(19)
-    private void handleImageOnKitKat(Intent data) {
+    public void handleImageOnKitKat(Intent data) {
         String imagePath = null;
         Uri uri = data.getData();
         if (DocumentsContract.isDocumentUri(getActivity(), uri)) {
@@ -350,16 +500,16 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
      * 根据图片真实路径，将图片显示到界面上
      * @param imagePath
      */
-    private void displayImage(String imagePath) {
+    public void displayImage(String imagePath) {
         if (imagePath != null) {
             Bitmap bitmap = BitmapFactory.decodeFile(imagePath);
             pull_img.setImageBitmap(bitmap);
             profile_image.setImageBitmap(bitmap);
             //图片缓存本地SD卡
-//            saveImage(bitmap);
+            saveImage(bitmap);
             //图片保存到sharedPreferences，并且上传
-            saveBitmapToSharedPreferences(bitmap);
-
+//            saveBitmapToSharedPreferences(bitmap);
+            uploadPic(new File(imagePath));
 
         } else {
             Toast.makeText(getActivity(), "获取图片路径失败", Toast.LENGTH_SHORT).show();
@@ -394,68 +544,6 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
         builder.show();
     }
 
-    //保存图片到SharedPreferences
-    private void saveBitmapToSharedPreferences(Bitmap bitmap) {
-        // Bitmap bitmap=BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
-        //第一步:将Bitmap压缩至字节数组输出流ByteArrayOutputStream
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 80, byteArrayOutputStream);
-        //第二步:利用Base64将字节数组输出流中的数据转换成字符串String
-        byte[] byteArray = byteArrayOutputStream.toByteArray();
-        String imageString = new String(Base64.encodeToString(byteArray, Base64.DEFAULT));
-        //第三步:将String保持至SharedPreferences
-        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("user_image", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("image", imageString);
-        editor.commit();
-
-        //上传头像
-       // uploadImage(imageString,"");
-    }
-
-
-    /**
-     * 上传头像
-     * @param imgStr
-     * @param imgName
-     */
-    public  void uploadImage(String imgStr, String imgName) {
-        RequestBody requestBody = new FormBody.Builder()
-                .add("phoneNumber", user.getTel())
-                .add("image", imgStr)
-                .build();
-        HttpUtil.postCallback(requestBody, Constants.UPLOAD_IMAGE_URL, new okhttp3.Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-
-            }
-        });
-    }
-
-    //从SharedPreferences获取图片
-    private boolean getBitmapFromSharedPreferences(){
-        boolean isGet = false;
-        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("user_image", Context.MODE_PRIVATE);
-        //第一步:取出字符串形式的Bitmap
-        String imageString=sharedPreferences.getString("image", "");
-        //第二步:利用Base64将字符串转换为ByteArrayInputStream
-        byte[] byteArray=Base64.decode(imageString, Base64.DEFAULT);
-        if(byteArray.length !=0){
-            isGet = true;
-            ByteArrayInputStream byteArrayInputStream=new ByteArrayInputStream(byteArray);
-
-            //第三步:利用ByteArrayInputStream生成Bitmap
-            Bitmap bitmap= BitmapFactory.decodeStream(byteArrayInputStream);
-            profile_image.setImageBitmap(bitmap);
-            pull_img.setImageBitmap(bitmap);
-        }
-        return isGet;
-    }
 
 
     /**
@@ -464,6 +552,9 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
     private void requestPermissions() {
         //运行时权限申请
         List<String> permissionList = new ArrayList<>();
+        if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.CAMERA);
+        }
         if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             permissionList.add(Manifest.permission.READ_EXTERNAL_STORAGE);
         }
@@ -471,7 +562,7 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
             permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
         if (!permissionList.isEmpty()) {
-            ActivityCompat.requestPermissions(getActivity(), permissionList.toArray(new String[permissionList.size()]), 1);
+            ActivityCompat.requestPermissions(getActivity(), permissionList.toArray(new String[permissionList.size()]), 10);
         } else {
             showChoosePicDialog();
         }
@@ -486,7 +577,7 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
-            case 1:
+            case 10:
                 if (grantResults.length > 0) {
                     for (int result : grantResults) {
                         if (result != PackageManager.PERMISSION_GRANTED) {
@@ -500,7 +591,7 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
                 }
                 break;
             default:
-                break;
+                super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
     }
 
@@ -527,7 +618,7 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
         }
         FileOutputStream fos = null;
         try {
-            File file = new File(filesDir,"icon.png");
+            File file = new File(filesDir,user.getTel() + "icon.png");
             fos = new FileOutputStream(file);
 
             bitmap.compress(Bitmap.CompressFormat.PNG, 100,fos);
@@ -556,7 +647,7 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
             filesDir = getActivity().getFilesDir();
 
         }
-        File file = new File(filesDir,"icon.png");
+        File file = new File(filesDir,user.getTel() != null ?  user.getTel() : "" + "icon.png");
         if(file.exists()){
             //存储--->内存
             Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
@@ -566,4 +657,91 @@ public class PersonFragment extends Fragment implements View.OnClickListener{
         }
         return false;
     }
+
+    //保存图片到SharedPreferences
+    private void saveBitmapToSharedPreferences(Bitmap bitmap) {
+        // Bitmap bitmap=BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
+        //第一步:将Bitmap压缩至字节数组输出流ByteArrayOutputStream
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 80, byteArrayOutputStream);
+        //第二步:利用Base64将字节数组输出流中的数据转换成字符串String
+        byte[] byteArray = byteArrayOutputStream.toByteArray();
+        String imageString = new String(Base64.encodeToString(byteArray, Base64.DEFAULT));
+        //第三步:将String保持至SharedPreferences
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("user_image", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putString("image", imageString);
+        editor.commit();
+
+        //上传头像
+//        uploadImage(imageString,"");
+    }
+
+
+    /**
+     *
+     * @param imgStr
+     * @param imgName
+     * @return 返回头像地址
+     */
+    public String uploadImage(String imgStr, String imgName) {
+//        RequestBody requestBody = new FormBody.Builder()
+//                .add("phoneNumber", user.getTel())
+//                .add("pic", imgStr)
+//                .build();
+//        HttpUtil.postCallback(requestBody, Constants.UPLOAD_IMAGE_URL, new okhttp3.Callback() {
+//            @Override
+//            public void onFailure(Call call, IOException e) {
+//
+//            }
+//
+//            @Override
+//            public void onResponse(Call call, Response response) throws IOException {
+//
+//            }
+//        });
+        String picPath = "sdcard/temp.jpg";
+        BmobFile bmobFile = new BmobFile(new File(picPath));
+        bmobFile.uploadblock(new UploadFileListener() {
+
+            @Override
+            public void done(BmobException e) {
+                if(e==null){
+                    //bmobFile.getFileUrl()--返回的上传文件的完整地址
+                    ToastUtil.showToast(getActivity(), "上传头像成功");
+                }else{
+                    ToastUtil.showToast(getActivity(), "上传头像失败");
+                }
+
+            }
+
+            @Override
+            public void onProgress(Integer value) {
+                // 返回的上传进度（百分比）
+            }
+        });
+
+        return bmobFile.getFileUrl();
+    }
+
+    //从SharedPreferences获取图片
+    private boolean getBitmapFromSharedPreferences(){
+        boolean isGet = false;
+        SharedPreferences sharedPreferences = getActivity().getSharedPreferences("user_image", Context.MODE_PRIVATE);
+        //第一步:取出字符串形式的Bitmap
+        String imageString=sharedPreferences.getString("image", "");
+        //第二步:利用Base64将字符串转换为ByteArrayInputStream
+        byte[] byteArray=Base64.decode(imageString, Base64.DEFAULT);
+        if(byteArray.length !=0){
+            isGet = true;
+            ByteArrayInputStream byteArrayInputStream=new ByteArrayInputStream(byteArray);
+
+            //第三步:利用ByteArrayInputStream生成Bitmap
+            Bitmap bitmap= BitmapFactory.decodeStream(byteArrayInputStream);
+            profile_image.setImageBitmap(bitmap);
+            pull_img.setImageBitmap(bitmap);
+        }
+        return isGet;
+    }
+
 }

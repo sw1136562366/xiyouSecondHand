@@ -16,22 +16,23 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.sendhand.xiyousecondhand.R;
-import com.sendhand.xiyousecondhand.entry.Constants;
+import com.sendhand.xiyousecondhand.MyApplication;
 import com.sendhand.xiyousecondhand.entry.User;
-import com.sendhand.xiyousecondhand.util.GsonUtil;
-import com.sendhand.xiyousecondhand.util.HttpUtil;
 import com.sendhand.xiyousecondhand.util.LogUtil;
+import com.sendhand.xiyousecondhand.util.SharedPrefercesUtil;
 import com.sendhand.xiyousecondhand.util.ToastUtil;
+import com.sendhand.xiyousecondhand.view.fragment.home.main.ui.MainActivity;
 
-import java.io.IOException;
+import java.util.List;
 
+import cn.bmob.v3.BmobQuery;
+import cn.bmob.v3.exception.BmobException;
+import cn.bmob.v3.listener.FindListener;
 import cn.smssdk.EventHandler;
 import cn.smssdk.SMSSDK;
-import okhttp3.Call;
-import okhttp3.FormBody;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
+import static com.sendhand.xiyousecondhand.util.SharedPrefercesUtil.clearData;
+import static com.sendhand.xiyousecondhand.util.SharedPrefercesUtil.saveObject;
 import static com.sendhand.xiyousecondhand.view.LoginActivity.loginActivitySign;
 
 /**
@@ -111,22 +112,15 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
      * @return
      */
     private boolean phoneIsRight() {
-
-        RequestBody requestBody = new FormBody.Builder()
-            .add("phoneNumber", etPhone.getText().toString())
-            .build();
-            HttpUtil.postCallback(requestBody, Constants.VALIDATE_PHONE_URL, new okhttp3.Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    LogUtil.d("SmsSendActivity", e.getMessage());
-                }
-
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    String getReturn = response.body().string();
-                    LogUtil.d("SmsSendActivity", "return:" + getReturn);
+        final boolean[] bool = new boolean[1];
+        BmobQuery<User> query = new BmobQuery<User>();
+        query.addWhereEqualTo("tel", etPhone.getText().toString());
+        query.findObjects(new FindListener<User>() {
+            @Override
+            public void done(List<User> object, BmobException e) {
+                if (e == null) {
                     if (sign.equals("register")) {
-                        if (getReturn.equals("1")) {
+                        if (object.size() == 0) {
                             //手机号没注册，继续进行注册
                             isNotRegister = true;
                         } else {
@@ -139,7 +133,7 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
                             });
                         }
                     } else if (sign.equals("modifyPassword") || sign.equals("smsLogin")) {
-                        if (getReturn.equals("0")) {
+                        if (object.size() > 0) {
                             //手机号已注册，可以进行修改和登录
                             isNotRegister = true;
                         } else {
@@ -152,9 +146,56 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
                             });
                         }
                     }
-
+                } else {
+                    LogUtil.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
                 }
-            });
+            }
+        });
+
+
+//        RequestBody requestBody = new FormBody.Builder()
+//            .add("phoneNumber", etPhone.getText().toString())
+//            .build();
+//            HttpUtil.postCallback(requestBody, Constants.VALIDATE_PHONE_URL, new okhttp3.Callback() {
+//                @Override
+//                public void onFailure(Call call, IOException e) {
+//                    LogUtil.d("SmsSendActivity", e.getMessage());
+//                }
+//
+//                @Override
+//                public void onResponse(Call call, Response response) throws IOException {
+//                    String getReturn = response.body().string();
+//                    LogUtil.d("SmsSendActivity", "return:" + getReturn);
+//                    if (sign.equals("register")) {
+//                        if (getReturn.equals("1")) {
+//                            //手机号没注册，继续进行注册
+//                            isNotRegister = true;
+//                        } else {
+//                            isNotRegister = false;
+//                            runOnUiThread(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    ToastUtil.showToast(SmsSendActivity.this, "该手机号已注册");
+//                                }
+//                            });
+//                        }
+//                    } else if (sign.equals("modifyPassword") || sign.equals("smsLogin")) {
+//                        if (getReturn.equals("0")) {
+//                            //手机号已注册，可以进行修改和登录
+//                            isNotRegister = true;
+//                        } else {
+//                            isNotRegister = false;
+//                            runOnUiThread(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    ToastUtil.showToast(SmsSendActivity.this, "该手机号未注册");
+//                                }
+//                            });
+//                        }
+//                    }
+//
+//                }
+//            });
         return isNotRegister;
     }
 
@@ -233,27 +274,58 @@ public class SmsSendActivity extends BaseActivity implements View.OnClickListene
                             }
                         });
                         //验证登录
-                        //再次发送http请求，获取用户信息
-                        RequestBody requestBody = new FormBody.Builder()
-                                .add("phoneNumber", etPhone.getText().toString())
-                                .build();
-                        HttpUtil.postCallback(requestBody, Constants.VALIDATE_LOGIN_URL, new okhttp3.Callback() {
+                        BmobQuery<User> query = new BmobQuery<User>();
+                        query.addWhereEqualTo("tel", etPhone.getText().toString());
+                        query.findObjects(new FindListener<User>() {
                             @Override
-                            public void onFailure(Call call, IOException e) {
-                                LogUtil.d("SmsSendActivity", e.getMessage());
-                            }
+                            public void done(List<User> object, BmobException e) {
+                                if (e == null) {
+                                    if (object.size() > 0) {
+                                        //登录成功
+                                        User user = object.get(0);
+//                            user.setPic("https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo_top_ca79a146.png");
+                                        //登录成功，从融云服务器获取token
+                                        if (user.getTel() != null && SharedPrefercesUtil.getTokenFromSP(MyApplication.getContext(), user.getTel()) == null) {
+                                            LoginActivity.getRYToken(user);
+                                        }
 
-                            @Override
-                            public void onResponse(Call call, Response response) throws IOException {
-                                String jsonUser = response.body().string();
-                                LogUtil.d("SmsSendActivity", jsonUser);
-                                User user = GsonUtil.parseJsonWithGson(jsonUser);
-                                Intent intent = new Intent(SmsSendActivity.this, MainActivity.class);
-                                //发送数据user
-                                intent.putExtra("user_data", user);
-                                startActivity(intent);
+                                        Intent intent = new Intent(SmsSendActivity.this, MainActivity.class);
+                                        //发送数据user
+                                        intent.putExtra("user_data", user);
+                                        startActivity(intent);
+                                        //先清空，保存用户信息sharedPreferences
+                                        clearData(MyApplication.getContext());
+                                        saveObject(MyApplication.getContext(), user);
+                                        finish();
+                                    }
+                                } else {
+                                    LogUtil.i("bmob","失败："+e.getMessage()+","+e.getErrorCode());
+                                }
                             }
                         });
+
+                        //再次发送http请求，获取用户信息
+//                        RequestBody requestBody = new FormBody.Builder()
+//                                .add("phoneNumber", etPhone.getText().toString())
+//                                .build();
+//                        HttpUtil.postCallback(requestBody, Constants.VALIDATE_LOGIN_URL, new okhttp3.Callback() {
+//                            @Override
+//                            public void onFailure(Call call, IOException e) {
+//                                LogUtil.d("SmsSendActivity", e.getMessage());
+//                            }
+//
+//                            @Override
+//                            public void onResponse(Call call, Response response) throws IOException {
+//                                byte[] bytes = response.body().bytes();
+//                                String jsonUser = new String(bytes, "GBK");
+//                                LogUtil.d("SmsSendActivity", jsonUser);
+//                                User user = GsonUtil.parseJsonWithGson(jsonUser);
+////                                Intent intent = new Intent(SmsSendActivity.this, MainActivity.class);
+//                                //发送数据user
+////                                intent.putExtra("user_data", user);
+////                                startActivity(intent);
+//                            }
+//                        });
                         //关闭登录界面
                         loginActivitySign.finish();
                         finish();
